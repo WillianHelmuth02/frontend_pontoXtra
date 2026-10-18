@@ -5,6 +5,11 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+/**
+ * Decoração do cabeçalho: cada objeto define posição, tamanho e cor de um círculo.
+ * Coordenadas negativas deixam parte da forma fora da tela, como na referência.
+ * A ordem do array também é a ordem de desenho: os últimos ficam sobre os primeiros.
+ */
 const circles = [
   { top: -35, left: -26, width: 78, height: 78, backgroundColor: '#06265E' },
   { top: 4, left: 9, width: 67, height: 67, backgroundColor: '#00651F' },
@@ -21,24 +26,36 @@ const circles = [
   { top: 285, left: 1, width: 68, height: 68, backgroundColor: '#06265E' },
 ];
 
+/**
+ * Tela de entrada do PontoXtra, com cores fixas para o tema claro.
+ * Por enquanto o formulário é visual: ainda não envia credenciais para a API.
+ */
 export default function LoginScreen() {
+  // Campos controlados pelo React. A senha permanece apenas no estado desta tela;
+  // secureTextEntry oculta a digitação, mas não substitui proteção no envio à API.
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
 
   return (
     <View style={styles.screen}>
       <StatusBar style="dark" />
+      {/* O fundo é decorativo e não deve interceptar toques no formulário. */}
       <View pointerEvents="none" style={styles.header}>
         {circles.map((circle, index) => <View key={index} style={[styles.circle, circle]} />)}
       </View>
+      {/* No iOS, abre espaço para o teclado. A rolagem permite alcançar os campos
+          em telas menores; keyboardShouldPersistTaps mantém os botões acessíveis. */}
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardAvoidingView}>
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           <ScrollView bounces={false} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            {/* Cartão branco sobreposto ao painel. contentFit preserva a marca
+                inteira e sua proporção, sem recortar o arquivo original. */}
             <View style={styles.logoCard}>
               <Image contentFit="contain" source={require('@/assets/images/Logo/Logo principal.png')} style={styles.logo} />
             </View>
             <View style={styles.formPanel}>
               <Text style={styles.title}>Login</Text>
+              {/* Os rótulos ficam fora dos inputs para continuar visíveis ao digitar. */}
               <View style={styles.fields}>
                 <View>
                   <Text style={styles.label}>NOME</Text>
@@ -48,9 +65,14 @@ export default function LoginScreen() {
                   <Text style={styles.label}>SENHA</Text>
                   <TextInput autoComplete="password" onChangeText={setPassword} placeholder="••••••••" placeholderTextColor="#666666" secureTextEntry style={styles.input} value={password} />
                 </View>
+                {/* Pendente: validar os campos, chamar a autenticação e tratar
+                    carregamento/erros antes de navegar para a área autenticada. */}
                 <Pressable accessibilityRole="button" style={styles.loginButton}><Text style={styles.loginButtonText}>Entrar</Text></Pressable>
               </View>
+              {/* Recuperação de senha ainda sem ação. hitSlop amplia a área de toque
+                  sem aumentar o texto ou alterar o espaçamento visual. */}
               <Pressable accessibilityRole="button" hitSlop={8}><Text style={styles.forgotPassword}>Esqueceu a senha?</Text></Pressable>
+              {/* Abre a confirmação de saída, mantendo esta tela no histórico. */}
               <Pressable accessibilityRole="button" hitSlop={8} onPress={() => router.push('/logout/index')}><Text style={styles.exit}>Sair</Text></Pressable>
             </View>
           </ScrollView>
@@ -61,14 +83,23 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
+  // Cores explícitas mantêm esta interface clara, independentemente do tema do aparelho.
   screen: { flex: 1, backgroundColor: '#F1F1F1' },
   header: { ...StyleSheet.absoluteFill, height: 365, backgroundColor: '#00651F', overflow: 'hidden' },
   circle: { position: 'absolute', borderRadius: 999 },
+  // AJUSTE DE POSIÇÃO: aumentar paddingTop desce o cartão e o conteúdo abaixo dele.
+  // flexGrow permite que o conteúdo ocupe a altura disponível e role quando necessário.
   keyboardAvoidingView: { flex: 1 }, safeArea: { flex: 1 }, scrollContent: { flexGrow: 1, paddingTop: 106 },
+  // zIndex mantém o cartão na frente do painel; elevation fornece sombra no Android.
   logoCard: { alignSelf: 'center', alignItems: 'center', justifyContent: 'center', width: 280, height: 280, borderRadius: 17, backgroundColor: '#FFFFFF', shadowColor: '#00245B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3, zIndex: 1 },
+  // Para descer apenas a imagem dentro do cartão, acrescente:
+  // transform: [{ translateY: 10 }]. Valores positivos deslocam a logo para baixo.
   logo: { width: 255, height: 255 },
+  // marginTop negativo faz o painel subir por trás do cartão. paddingTop reserva
+  // espaço para a sobreposição antes do título; os dois valores trabalham juntos.
   formPanel: { flex: 1, minHeight: 440, marginTop: -76, paddingTop: 159, paddingHorizontal: 32, alignItems: 'center', borderTopLeftRadius: 52, borderTopRightRadius: 52, backgroundColor: '#F1F1F1' },
   title: { color: '#1E2424', fontSize: 46, fontWeight: '800', letterSpacing: -1.5 },
+  // marginTop controla a distância do título ao formulário; gap separa seus blocos.
   fields: { alignSelf: 'stretch', marginTop: 45, gap: 13 },
   label: { marginLeft: 3, marginBottom: 5, color: '#606060', fontSize: 12, fontWeight: '500', letterSpacing: 2.1 },
   input: { height: 57, paddingHorizontal: 23, borderRadius: 17, color: '#383838', backgroundColor: '#CECECE', fontSize: 16 },
