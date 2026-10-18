@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import { AuthProvider } from '@/contexts/auth';
 
 /**
  * Navegador principal compartilhado pelas rotas da pasta app.
@@ -7,5 +8,6 @@ import { Stack } from 'expo-router';
  * sem a barra de título automática acima da composição visual.
  */
 export default function RootLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  // O provider fica acima do navegador para manter a sessão ao trocar de tela.
+  return <AuthProvider><Stack screenOptions={{ headerShown: false }} /></AuthProvider>;
 }

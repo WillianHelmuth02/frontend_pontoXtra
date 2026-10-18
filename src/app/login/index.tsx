@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
+import { useAuth } from '@/contexts/auth';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -28,13 +29,30 @@ const circles = [
 
 /**
  * Tela de entrada do PontoXtra, com cores fixas para o tema claro.
- * Por enquanto o formulário é visual: ainda não envia credenciais para a API.
+ * Envia e-mail e senha à API e apresenta falhas de validação ou de conexão.
  */
 export default function LoginScreen() {
   // Campos controlados pelo React. A senha permanece apenas no estado desta tela;
   // secureTextEntry oculta a digitação, mas não substitui proteção no envio à API.
-  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState('');
+  const { usuario, login } = useAuth();
+
+  // Evita novo envio durante a requisição. A senha não recebe trim: espaços
+  // podem fazer parte da credencial. A validação definitiva ocorre no backend.
+  async function submit() {
+    if (pending) return;
+    if (!email.trim() || !password) { setError('Informe e-mail e senha.'); return; }
+    setPending(true);
+    setError('');
+    try { await login(email, password); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível entrar.'); }
+    finally { setPending(false); }
+  }
+
+  if (usuario) return <Redirect href="../session" />;
 
   return (
     <View style={styles.screen}>
@@ -58,20 +76,20 @@ export default function LoginScreen() {
               {/* Os rótulos ficam fora dos inputs para continuar visíveis ao digitar. */}
               <View style={styles.fields}>
                 <View>
-                  <Text style={styles.label}>NOME</Text>
-                  <TextInput autoCapitalize="words" autoComplete="name" onChangeText={setName} placeholder="Seu nome" placeholderTextColor="#666666" style={styles.input} value={name} />
+                  <Text style={styles.label}>E-MAIL</Text>
+                  <TextInput accessibilityLabel="E-mail" autoCapitalize="none" autoCorrect={false} keyboardType="email-address" autoComplete="email" onChangeText={setEmail} placeholder="Seu e-mail" placeholderTextColor="#666666" style={styles.input} value={email} editable={!pending} />
                 </View>
                 <View>
                   <Text style={styles.label}>SENHA</Text>
                   <TextInput autoComplete="password" onChangeText={setPassword} placeholder="••••••••" placeholderTextColor="#666666" secureTextEntry style={styles.input} value={password} />
                 </View>
-                {/* Pendente: validar os campos, chamar a autenticação e tratar
-                    carregamento/erros antes de navegar para a área autenticada. */}
-                <Pressable accessibilityRole="button" style={styles.loginButton}><Text style={styles.loginButtonText}>Entrar</Text></Pressable>
+                {error ? <Text accessibilityRole="alert" style={{ color: '#B42318' }}>{error}</Text> : null}
+                {/* Desabilitar o botão também impede envios duplicados por toque. */}
+                <Pressable accessibilityRole="button" disabled={pending} onPress={submit} style={[styles.loginButton, pending && { opacity: 0.6 }]}><Text style={styles.loginButtonText}>{pending ? 'Entrando…' : 'Entrar'}</Text></Pressable>
               </View>
               {/* Recuperação de senha ainda sem ação. hitSlop amplia a área de toque
                   sem aumentar o texto ou alterar o espaçamento visual. */}
-              <Pressable accessibilityRole="button" hitSlop={8}><Text style={styles.forgotPassword}>Esqueceu a senha?</Text></Pressable>
+              <Text style={styles.forgotPassword}>Para recuperar a senha, contate o administrador.</Text>
               {/* Abre a confirmação de saída, mantendo esta tela no histórico. */}
               <Pressable accessibilityRole="button" hitSlop={8} onPress={() => router.push('/logout/index')}><Text style={styles.exit}>Sair</Text></Pressable>
             </View>

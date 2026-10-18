@@ -1,5 +1,7 @@
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { Redirect } from 'expo-router';
+import { useState } from 'react';
+import { useAuth } from '@/contexts/auth';
 import { StatusBar } from 'expo-status-bar';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,13 +19,25 @@ const circles = [
 ];
 
 /**
- * Confirmação visual de saída. Atualmente confirmar apenas retorna ao login.
- * Quando houver autenticação, será necessário encerrar a sessão e limpar as
- * credenciais armazenadas antes desse redirecionamento.
+ * Confirmação de saída: revoga a sessão na API e descarta o token local.
+ * Se a rede falhar, informa o erro e permite tentar novamente.
  */
 export default function LogoutScreen() {
   // Insets representam áreas reservadas pelo sistema, como notch e indicador inferior.
   const insets = useSafeAreaInsets();
+  const { usuario, logout } = useAuth();
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState('');
+  async function confirmLogout() {
+    if (pending) return;
+    setPending(true);
+    setError('');
+    try { await logout(); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível sair.'); }
+    finally { setPending(false); }
+  }
+  // Protege a confirmação contra acesso direto sem uma sessão ativa.
+  if (!usuario) return <Redirect href="/login/index" />;
 
   return (
     <View style={styles.screen}>
@@ -54,15 +68,16 @@ export default function LogoutScreen() {
         <View style={[styles.panel, { paddingBottom: Math.max(insets.bottom, 32) }]}>
           <Text style={styles.title}>Logout</Text>
           <Text style={styles.subtitle}>Tem Certeza?</Text>
-          {/* replace substitui esta confirmação no histórico pelo login; não limpa
-              sozinho toda a pilha de navegação nem encerra uma sessão no servidor.
-              O estado pressed reduz a opacidade para dar retorno visual ao toque. */}
+          {/* O contexto encerra a sessão somente após a resposta da API (ou 401).
+              Sem usuário, o Redirect acima leva de volta ao login. */}
           <Pressable
             accessibilityRole="button"
-            onPress={() => router.replace('/login/index')}
+            disabled={pending}
+            onPress={confirmLogout}
             style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}>
-            <Text style={styles.buttonText}>Sair</Text>
+            <Text style={styles.buttonText}>{pending ? 'Saindo…' : 'Sair'}</Text>
           </Pressable>
+          {error ? <Text accessibilityRole="alert" style={{ color: '#B42318', marginTop: 16 }}>{error}</Text> : null}
         </View>
       </ScrollView>
     </View>
