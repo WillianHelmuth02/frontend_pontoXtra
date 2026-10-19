@@ -7,5 +7,5 @@ import { Redirect } from 'expo-router';
  * entre mostrar o login ou encaminhar o usuário já autenticado à área principal.
  */
 export default function Index() {
-  return <Redirect href="/login/index" />;
+  return <Redirect href="/login" />;
 }

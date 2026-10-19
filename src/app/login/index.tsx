@@ -52,7 +52,7 @@ export default function LoginScreen() {
     finally { setPending(false); }
   }
 
-  if (usuario) return <Redirect href="../session" />;
+  if (usuario) return <Redirect href="/session" />;
 
   return (
     <View style={styles.screen}>
@@ -91,7 +91,7 @@ export default function LoginScreen() {
                   sem aumentar o texto ou alterar o espaçamento visual. */}
               <Text style={styles.forgotPassword}>Para recuperar a senha, contate o administrador.</Text>
               {/* Abre a confirmação de saída, mantendo esta tela no histórico. */}
-              <Pressable accessibilityRole="button" hitSlop={8} onPress={() => router.push('/logout/index')}><Text style={styles.exit}>Sair</Text></Pressable>
+              <Pressable accessibilityRole="button" hitSlop={8} onPress={() => router.push('/logout')}><Text style={styles.exit}>Sair</Text></Pressable>
             </View>
           </ScrollView>
         </SafeAreaView>

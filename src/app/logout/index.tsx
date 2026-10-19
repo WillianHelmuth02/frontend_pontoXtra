@@ -37,7 +37,7 @@ export default function LogoutScreen() {
     finally { setPending(false); }
   }
   // Protege a confirmação contra acesso direto sem uma sessão ativa.
-  if (!usuario) return <Redirect href="/login/index" />;
+  if (!usuario) return <Redirect href="/login" />;
 
   return (
     <View style={styles.screen}>
