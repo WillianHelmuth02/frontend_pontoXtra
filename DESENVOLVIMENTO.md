@@ -23,7 +23,8 @@ No dispositivo físico, localhost aponta para o aparelho; use o endereço da API
 ## Autenticação e teste manual
 
 1. Entre com e-mail e senha de um usuário ativo já existente no banco.
-2. A rota `/session` abre a lista de jornadas com nome e perfil do usuário real.
+2. A rota `/session` abre o início conforme o perfil: lista para Operacional e
+   painel de pendências para RH/Administrador, com contagens reais da API.
 3. A lista consulta `GET /jornadas`, `/prestadores`, `/funcoes` e `/setores` com token.
 4. Clique em Sair e confirme: `POST /auth/logout` revoga o token no backend.
 5. Tente acessar `/session` sem login: você será encaminhado ao login.
@@ -34,8 +35,8 @@ limpam a sessão; o backend continua sendo a autoridade sobre validade e permiss
 Uma falha de rede ao sair mantém a sessão local para permitir repetir a revogação.
 O backend guarda sessões em memória e reiniciá-lo também invalida tokens anteriores.
 Não há recuperação automática de senha no backend: o usuário é orientado a procurar
-o administrador. A tela de jornadas lista registros existentes; o cadastro de novas
-jornadas e as demais ações do fluxo ainda terão suas próprias interfaces.
+o administrador. As jornadas agora têm criação, consulta, correção e cancelamento
+auditável, além dos eventos e das ações de conferência/decisão/pagamento.
 
 ## Tela de jornadas
 
@@ -53,7 +54,7 @@ encontrada, o cartão mostra o ID em vez de inventar um nome.
 O botão Filtros abre período (DD/MM/AAAA), status e prestador com busca por nome.
 Aplicar consulta novamente o backend; Limpar volta à consulta completa.
 Datas impossíveis ou período invertido apresentam erro antes da chamada.
-Início retorna ao topo e atualiza a consulta com os filtros atuais. Em caso de erro,
+Início retorna à página do perfil (Operacional volta à consulta completa). Em caso de erro,
 Tentar novamente refaz a consulta. Dados de uma consulta falha não habilitam entrada.
 
 Selecionar uma linha marca somente o círculo. Entrada é exibida apenas ao Operacional
@@ -68,6 +69,73 @@ indisponíveis. Após sucesso ou falha a tela consulta novamente os dados. Não 
 repetição automática de PATCH: uma falha de rede pode acontecer após o servidor
 gravar a entrada. Confira o cartão antes de uma nova tentativa explícita.
 O botão de entrada não cria uma jornada nem registra intervalo ou saída.
+
+Os cartões oferecem Ver detalhes; + Nova jornada aparece para Operacional e RH.
+Ao retornar à lista, a consulta é atualizada para refletir os eventos registrados.
+
+## CRUD e fluxo completo das jornadas
+
+Novas páginas usam o mesmo azul/verde e saudação do protótipo. Os acessos de
+prestadores, funções e setores do protótipo não foram transformados em CRUDs
+adicionais: o escopo desta entrega é o ciclo completo das jornadas. Na criação,
+esses cadastros são consultados pela API e precisam existir e estar ativos.
+
+| Rota | Finalidade |
+| --- | --- |
+| `/session` | Início por perfil, com pendências agregadas da API |
+| `/jornadas` | Todas as jornadas, seleção e filtros |
+| `/nova-jornada` | Criação por Operacional ou RH |
+| `/jornada?id=...` | Dados completos, ações disponíveis e histórico |
+| `/corrigir-jornada?id=...` | Correção por RH |
+
+Nos detalhes, o Operacional registra entrada, início/fim de intervalo e saída.
+Um intervalo iniciado precisa terminar antes da saída; pular o intervalo é
+permitido. Os horários são capturados pelo servidor. A saída calcula tempo
+líquido e valor, passando a jornada a Aguardando conferência.
+
+RH confere e corrige somente nos status permitidos. A correção permite data,
+valor/hora histórico e horários completos com segundos, apresentados em Brasília
+(UTC-03). O formulário converte para UTC explícito ao enviar e permite remover
+o intervalo deixando seus dois campos vazios. O backend recalcula os valores.
+Uma correção volta a jornada para Aguardando conferência e invalida as decisões
+anteriores, preservadas no histórico. Não troca prestador, função ou setor.
+
+Administrador autoriza ou rejeita jornadas Aguardando autorização. A rejeição
+exige justificativa e devolve ao RH para correção e nova conferência. RH registra
+pagamento apenas de jornada Autorizada, informando data. Isso registra quitação,
+sem executar transferência financeira. Jornadas Pagas não oferecem alterações.
+
+A exclusão do CRUD é lógica: RH pode cancelar EM_ANDAMENTO sem qualquer marcação,
+com motivo obrigatório. CANCELADO preserva a linha e auditoria e libera uma nova
+jornada para o prestador. Não existe exclusão física ou restauração. Essa extensão
+exige o ENUM atualizado conforme `back/docs/jornadas-cancelamento.md`.
+
+Todos os comandos de escrita pedem confirmação, exceto a criação, que usa o botão
+Salvar jornada após o preenchimento. Existem travas contra toque duplicado e
+nenhuma escrita é repetida automaticamente. Se a criação/correção tiver resposta
+inconclusiva, volte à consulta para verificar o resultado antes de reenviar.
+O histórico mostra autor por ID (a API de usuários é restrita ao Administrador),
+instante e alterações de cada campo; não oferece edição nem exclusão de auditoria.
+
+## Roteiro manual por perfil
+
+1. Com cadastros ativos existentes, entre como Operacional ou RH e crie uma jornada.
+   Confira a data, prestador/função/setor e valor/hora histórico nos detalhes.
+2. Como Operacional, registre entrada, aguarde ao menos um segundo, inicie intervalo,
+   aguarde, finalize intervalo, aguarde e registre saída. O servidor rejeita eventos
+   em sequência temporal inválida, inclusive no mesmo segundo.
+3. Entre como RH, abra Aguardando conferência, confira o histórico e confira a jornada.
+4. Entre como Administrador e rejeite com motivo. RH pode então corrigir os dados;
+   confira recálculo e retorno a Aguardando conferência e faça nova conferência.
+5. Administrador autoriza. RH registra pagamento com data e verifica o estado Pago.
+6. Crie outra jornada e, antes de qualquer marcação, cancele como RH com motivo.
+   Confira o histórico e crie nova jornada para o mesmo prestador para validar a liberação.
+7. Verifique filtros por data, prestador, status e os estados de lista vazia/erro.
+   Operacional não deve receber ações de RH/Administrador e vice-versa.
+
+Cada passo manual acima grava dados reais via API; use registros de teste escolhidos
+por você. O teste automático MySQL descrito no backend usa rollback para não deixar
+fixtures. Não existem contas/senhas padrão criadas automaticamente pelo frontend.
 
 Arquivos principais: `src/components/jornadas-screen.tsx` (interface e interação),
 `src/services/jornadas.ts` (consultas), `src/utils/jornadas.ts` (contratos, filtros

@@ -1,6 +1,6 @@
-import { Redirect, router } from 'expo-router';
+import { Redirect, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/auth';
@@ -29,8 +29,11 @@ function WorkIcon() {
  */
 export function JornadasScreen() {
   const { usuario } = useAuth();
+  const params = useLocalSearchParams<{ status?: string }>();
   const [dados, setDados] = useState<Dados>(DADOS_VAZIOS);
-  const [filtros, setFiltros] = useState<FiltrosJornadas>(FILTROS_VAZIOS);
+  const [filtros, setFiltros] = useState<FiltrosJornadas>(() => ({ ...FILTROS_VAZIOS,
+    status: typeof params.status === 'string' && Object.hasOwn(STATUS_LABELS, params.status) ? params.status as FiltrosJornadas['status'] : '',
+  }));
   const [rascunho, setRascunho] = useState<FiltrosJornadas>(FILTROS_VAZIOS);
   const [filterOpen, setFilterOpen] = useState(false);
   const [prestadorSearch, setPrestadorSearch] = useState('');
@@ -73,11 +76,13 @@ export function JornadasScreen() {
     void load(filtros);
   }
 
-  useEffect(() => {
+  // Voltar dos detalhes também refaz a leitura: uma ação pode ter mudado o status.
+  useFocusEffect(useCallback(() => {
     const requests = generation;
+    setLoading(true); setFresh(false); setError('');
     if (usuario) void load(filtros);
     return () => { requests.current++; };
-  }, [usuario, filtros, load]);
+  }, [usuario, filtros, load]));
 
   const selected = dados.jornadas.find((jornada) => jornada.id === selectedId);
   const canEnter = fresh && !loading && !pending && !!usuario && podeRegistrarEntrada(usuario.perfil, selected);
@@ -153,6 +158,7 @@ export function JornadasScreen() {
               <Text style={styles.greetingText}>Perfil: {PROFILE_LABELS[usuario.perfil]}</Text>
             </View>
             <Text accessibilityRole="header" style={styles.title}>Jornadas</Text>
+            {usuario.perfil !== 'ADMINISTRADOR' && <Pressable accessibilityRole="button" disabled={pending} onPress={() => router.push('/nova-jornada')} style={styles.newButton}><Text style={styles.primaryText}>+ Nova jornada</Text></Pressable>}
             <View style={styles.toolbar}>
               <Text style={styles.count}>{loading ? 'Carregando…' : fresh ? `${dados.jornadas.length} jornada(s)` : 'Consulta indisponível'}</Text>
               <Pressable accessibilityRole="button" disabled={loading || pending} onPress={() => { setRascunho({ ...filtros }); setFilterError(''); setPrestadorSearch(''); setFilterOpen(true); }}>
@@ -168,7 +174,8 @@ export function JornadasScreen() {
           renderItem={({ item }) => {
             const checked = item.id === selectedId;
             const nome = nomesPrestadores.get(item.prestador_id) ?? `Prestador #${item.prestador_id}`;
-            return <Pressable accessibilityRole="radio" accessibilityState={{ checked, disabled: pending }} accessibilityLabel={`${nome}, ${formatarData(item.data_jornada)}, ${STATUS_LABELS[item.status]}`} disabled={pending || loading} onPress={() => { setSelectedId(checked ? null : item.id); setNotice(''); }} style={[styles.row, checked && styles.rowSelected]}>
+            return <View style={[styles.row, checked && styles.rowSelected]}>
+              <Pressable accessibilityRole="radio" accessibilityState={{ checked, disabled: pending }} accessibilityLabel={`${nome}, ${formatarData(item.data_jornada)}, ${STATUS_LABELS[item.status]}`} disabled={pending || loading} onPress={() => { setSelectedId(checked ? null : item.id); setNotice(''); }} style={styles.selectArea}>
               <WorkIcon />
               <View style={styles.rowText}>
                 <Text style={styles.person}>{nome}</Text>
@@ -177,7 +184,9 @@ export function JornadasScreen() {
                 {!!item.entrada_em && <Text style={styles.entryLabel}>Entrada registrada</Text>}
               </View>
               <View style={[styles.radio, checked && styles.radioChecked]}>{checked && <Text style={styles.check}>✓</Text>}</View>
-            </Pressable>;
+              </Pressable>
+              <Pressable accessibilityRole="button" disabled={pending} accessibilityLabel={`Ver detalhes da jornada ${item.id} de ${nome}`} onPress={() => router.push({ pathname: '/jornada', params: { id: item.id } })}><Text style={[styles.filterButton, { textAlign: 'right' }]}>Ver detalhes →</Text></Pressable>
+            </View>;
           }}
         />
         {/* Indica por que a ação está indisponível sem inventar uma mudança de status. */}
@@ -185,7 +194,7 @@ export function JornadasScreen() {
       </View>
       <SafeAreaView edges={['bottom']} style={styles.bottomSafe}>
         <View style={styles.footer}>
-          <Pressable accessibilityRole="button" disabled={loading || pending} onPress={() => { list.current?.scrollToOffset({ offset: 0, animated: true }); setNotice(''); reload(); }} style={styles.footerButton}><Text style={styles.footerText}>INÍCIO</Text></Pressable>
+          <Pressable accessibilityRole="button" disabled={pending} onPress={() => router.replace('/session')} style={styles.footerButton}><Text style={styles.footerText}>INÍCIO</Text></Pressable>
           {usuario.perfil === 'OPERACIONAL' && <Pressable accessibilityRole="button" accessibilityState={{ disabled: !canEnter }} disabled={!canEnter} onPress={() => setConfirmation(true)} style={[styles.footerButton, !canEnter && styles.disabled]}><Text style={styles.footerText}>ENTRADA</Text></Pressable>}
           <Pressable accessibilityRole="button" disabled={pending} onPress={() => router.push('/logout')} style={styles.footerButton}><Text style={styles.footerText}>SAIR</Text></Pressable>
         </View>
@@ -253,7 +262,9 @@ const styles = StyleSheet.create({
   toolbar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   count: { color: '#52637C', fontSize: 13 },
   filterButton: { color: BLUE, fontWeight: '600', paddingVertical: 6 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 86, borderWidth: 2, borderColor: BLUE, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 14 },
+  row: { gap: 4, minHeight: 86, borderWidth: 2, borderColor: BLUE, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 14 },
+  selectArea: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  newButton: { backgroundColor: BLUE, borderRadius: 8, padding: 12, alignItems: 'center', marginBottom: 12 },
   rowSelected: { backgroundColor: '#E8EFFF' },
   rowText: { flex: 1, gap: 4 },
   person: { fontSize: 20, color: BLUE },

@@ -1,6 +1,6 @@
-import { JornadasScreen } from '@/components/jornadas-screen';
+import JourneyHome from '@/components/journey-home';
 
-/** Mantém a rota pós-login existente. A implementação fica em components para
- * separar navegação de apresentação e facilitar futuras telas de detalhes.
+/** Mantém a rota pós-login existente. O componente direciona Operacional para a
+ * lista e apresenta pendências específicas para RH e Administrador.
  */
-export default JornadasScreen;
+export default JourneyHome;

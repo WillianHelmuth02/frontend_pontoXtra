@@ -40,6 +40,38 @@ async function run() {
   for (const status of Object.keys(rules.STATUS_LABELS).filter((status) => status !== 'EM_ANDAMENTO')) {
     assert.equal(podeRegistrarEntrada('OPERACIONAL', { ...open, status }), false);
   }
+  // Matriz dos demais eventos: intervalo aberto bloqueia saída; fim do intervalo
+  // não libera um segundo intervalo. Cancelamento só cabe ao RH antes de marcações.
+  const base = { ...open, inicio_intervalo_em: null, fim_intervalo_em: null };
+  assert.deepEqual(rules.acoesPermitidas('OPERACIONAL', base), ['entrada']);
+  assert.deepEqual(rules.acoesPermitidas('RH', base), ['cancelar']);
+  assert.deepEqual(rules.acoesPermitidas('OPERACIONAL', { ...base, entrada_em: '2026-10-18T10:00:00Z' }), ['inicio-intervalo', 'saida']);
+  assert.deepEqual(rules.acoesPermitidas('OPERACIONAL', { ...base, entrada_em: '2026-10-18T10:00:00Z', inicio_intervalo_em: '2026-10-18T12:00:00Z' }), ['fim-intervalo']);
+  assert.deepEqual(rules.acoesPermitidas('OPERACIONAL', { ...base, entrada_em: '2026-10-18T10:00:00Z', inicio_intervalo_em: '2026-10-18T12:00:00Z', fim_intervalo_em: '2026-10-18T13:00:00Z' }), ['saida']);
+  assert.deepEqual(rules.acoesPermitidas('RH', { ...base, status: 'AGUARDANDO_CONFERENCIA' }), ['conferir', 'corrigir']);
+  assert.deepEqual(rules.acoesPermitidas('ADMINISTRADOR', { ...base, status: 'AGUARDANDO_AUTORIZACAO' }), ['autorizar', 'rejeitar']);
+  assert.deepEqual(rules.acoesPermitidas('RH', { ...base, status: 'AUTORIZADO' }), ['pagar']);
+  assert.deepEqual(rules.acoesPermitidas('ADMINISTRADOR', { ...base, status: 'AUTORIZADO' }), []);
+  for (const perfil of ['RH', 'OPERACIONAL', 'ADMINISTRADOR']) {
+    for (const status of ['PAGO', 'CANCELADO']) assert.deepEqual(rules.acoesPermitidas(perfil, { ...base, status }), []);
+  }
+  assert.deepEqual(rules.acoesPermitidas('RH', { ...base, inicio_intervalo_em: '2026-10-18T12:00:00Z' }), []);
+  assert.deepEqual(rules.acoesPermitidas('OPERACIONAL', { ...base, inicio_intervalo_em: '2026-10-18T12:00:00Z' }), []);
+  const correction = { data_jornada: '18/10/2026', valor_hora: '25,50', entrada_em: '18/10/2026 23:00:00', saida_em: '19/10/2026 07:00:00', inicio_intervalo_em: '', fim_intervalo_em: '' };
+  const payload = rules.payloadCorrecao(correction);
+  assert.equal(payload.entrada_em, '2026-10-19T02:00:00.000Z');
+  assert.equal(payload.saida_em, '2026-10-19T10:00:00.000Z');
+  assert.equal(payload.valor_hora, '25.50');
+  assert.equal(payload.inicio_intervalo_em, null);
+  assert.equal(payload.fim_intervalo_em, null);
+  assert.equal(rules.horarioFormulario(payload.entrada_em), correction.entrada_em);
+  assert.equal(rules.dinheiro('9007199254740993.99'), 'R$ 9.007.199.254.740.993,99');
+  assert.throws(() => rules.payloadCorrecao({ ...correction, inicio_intervalo_em: '19/10/2026 01:00:00' }));
+  assert.throws(() => rules.payloadCorrecao({ ...correction, saida_em: correction.entrada_em }));
+  assert.throws(() => rules.payloadCorrecao({ ...correction, valor_hora: '0' }));
+  assert.throws(() => rules.payloadCorrecao({ ...correction, valor_hora: '1.000,00' }));
+  assert.throws(() => rules.horarioParaApi('18/10/2026 24:00:00'));
+  assert.throws(() => rules.horarioParaApi('31/02/2026 12:00:00'));
   const requests = [];
   const service = load('src/services/jornadas.ts', {
     '@/utils/jornadas': rules,
@@ -47,6 +79,6 @@ async function run() {
   });
   assert.deepEqual(await service.carregarJornadas(FILTROS_VAZIOS), { jornadas: [], prestadores: [], funcoes: [], setores: [] });
   assert.deepEqual(requests, ['/jornadas', '/prestadores', '/funcoes', '/setores']);
-  console.log('Jornadas: consultas, filtros, datas, IDs grandes e permissões de entrada validados.');
+  console.log('Jornadas: consultas, filtros, datas, IDs grandes, correção, fuso, dinheiro e matriz de ações por perfil validados.');
 }
 run().catch((error) => { console.error(error); process.exitCode = 1; });
