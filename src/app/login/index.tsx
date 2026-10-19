@@ -105,19 +105,11 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#F1F1F1' },
   header: { ...StyleSheet.absoluteFill, height: 365, backgroundColor: '#00651F', overflow: 'hidden' },
   circle: { position: 'absolute', borderRadius: 999 },
-  // AJUSTE DE POSIÇÃO: aumentar paddingTop desce o cartão e o conteúdo abaixo dele.
-  // flexGrow permite que o conteúdo ocupe a altura disponível e role quando necessário.
   keyboardAvoidingView: { flex: 1 }, safeArea: { flex: 1 }, scrollContent: { flexGrow: 1, paddingTop: 106 },
-  // zIndex mantém o cartão na frente do painel; elevation fornece sombra no Android.
   logoCard: { alignSelf: 'center', alignItems: 'center', justifyContent: 'center', width: 280, height: 280, borderRadius: 17, backgroundColor: '#FFFFFF', shadowColor: '#00245B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3, zIndex: 1 },
-  // Para descer apenas a imagem dentro do cartão, acrescente:
-  // transform: [{ translateY: 10 }]. Valores positivos deslocam a logo para baixo.
   logo: { width: 255, height: 255 },
-  // marginTop negativo faz o painel subir por trás do cartão. paddingTop reserva
-  // espaço para a sobreposição antes do título; os dois valores trabalham juntos.
   formPanel: { flex: 1, minHeight: 440, marginTop: -76, paddingTop: 159, paddingHorizontal: 32, alignItems: 'center', borderTopLeftRadius: 52, borderTopRightRadius: 52, backgroundColor: '#F1F1F1' },
   title: { color: '#1E2424', fontSize: 46, fontWeight: '800', letterSpacing: -1.5 },
-  // marginTop controla a distância do título ao formulário; gap separa seus blocos.
   fields: { alignSelf: 'stretch', marginTop: 45, gap: 13 },
   label: { marginLeft: 3, marginBottom: 5, color: '#606060', fontSize: 12, fontWeight: '500', letterSpacing: 2.1 },
   input: { height: 57, paddingHorizontal: 23, borderRadius: 17, color: '#383838', backgroundColor: '#CECECE', fontSize: 16 },
