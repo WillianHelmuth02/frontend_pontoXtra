@@ -1,5 +1,7 @@
 # Desenvolvimento local Web
 
+> Regra de produto revisada em 22/10/2026: a criação deve aguardar aprovação do ADM para realização; após a execução e a conferência do RH, uma segunda aprovação autoriza o pagamento. A [DEC-001](../Memoria_Projeto/decisoes/DEC-001-DUPLA-APROVACAO.md) é a referência vigente. Implementação pendente: as telas e o roteiro abaixo ainda descrevem o fluxo atual com apenas a decisão posterior.
+
 ## Iniciar
 
 Em um terminal na pasta `back`, execute `npm.cmd run start:dev`.

@@ -1,3 +1,13 @@
+# Contexto compartilhado do PontoXtra
+
+Antes de trabalhar neste módulo, leia `../AGENTS.md` e `../Memoria_Projeto/README.md`, especialmente `../Memoria_Projeto/decisoes/DEC-001-DUPLA-APROVACAO.md`.
+
+A regra vigente exige duas aprovações distintas do ADM: realização antes da entrada e pagamento após encerramento e conferência do RH. A documentação não comprova implementação; confira `../Memoria_Projeto/02_ESTADO_ATUAL.md` e o código. Atualize a memória ao concluir mudanças de comportamento.
+
+Este módulo é um repositório independente. Compartilhe também a pasta de memória ao fornecer o projeto a outra IA; se ela estiver ausente, não assuma que o fluxo antigo de autorização única continua vigente.
+
+---
+
 This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
 
 ## Expo has changed — do not trust your training data
