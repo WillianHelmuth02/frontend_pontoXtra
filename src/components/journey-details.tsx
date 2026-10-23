@@ -72,7 +72,7 @@ export default function JourneyDetails({ id, criada }: { id: string; criada: boo
   const writing = useRef(false);
   const data = resource.data;
   const j = data?.jornada;
-  const actions = j && usuario && resource.fresh ? acoesPermitidas(usuario.perfil, j) : [];
+  const actions = j && usuario && resource.fresh ? acoesPermitidas(usuario.perfil, j, usuario.id) : [];
 
   async function confirm() {
     if (!action || !usuario || !resource.fresh || writing.current) return;
@@ -89,7 +89,7 @@ export default function JourneyDetails({ id, criada }: { id: string; criada: boo
       writing.current = true; setPending(true); setError(''); setNotice('');
       // Releitura não substitui a transação, mas detecta mudanças antes de enviar.
       const current = await api<Jornada>(`/jornadas/${id}`);
-      if (!acoesPermitidas(usuario.perfil, current).includes(action)) throw new Error('A jornada foi alterada e não permite mais esta ação.');
+      if (!acoesPermitidas(usuario.perfil, current, usuario.id).includes(action)) throw new Error('A jornada foi alterada e não permite mais esta ação.');
       await api<Jornada>(`/jornadas/${id}/${action}`, { method: 'PATCH', ...(body ? { body: JSON.stringify(body) } : {}) });
       setNotice(`${ACAO_LABELS[action]}: operação registrada com sucesso.`);
     } catch (cause) {
@@ -142,7 +142,7 @@ export default function JourneyDetails({ id, criada }: { id: string; criada: boo
         <View accessibilityViewIsModal style={[ui.card, { width: '100%', maxWidth: 520, backgroundColor: '#FFFFFF' }]}>
           <Text accessibilityRole="header" style={ui.subtitle}>{action ? ACAO_LABELS[action] : ''}?</Text>
           <Text style={ui.text}>Jornada #{id} · {data?.prestadores.find((item) => item.id === j?.prestador_id)?.nome}</Text>
-          {action === 'cancelar' ? <Text style={ui.text}>O cancelamento preserva a jornada e seu histórico. Só é permitido sem marcações e libera o prestador para outra jornada.</Text>
+          {action === 'cancelar' ? <Text style={ui.text}>A exclusão preserva a jornada e seu histórico, com status Cancelado. Só é permitida antes de qualquer marcação e libera o prestador para outra jornada. Não é possível restaurá-la.</Text>
             : action === 'pagar' ? <Text style={ui.text}>Este registro informa a quitação, sem realizar transferência bancária.</Text>
               : <Text style={ui.text}>A ação será registrada no histórico. Marcações operacionais usam o horário atual do servidor.</Text>}
           {(action === 'cancelar' || action === 'rejeitar') && <Field label="Justificativa *" value={motivo} onChangeText={setMotivo} multiline disabled={pending} />}

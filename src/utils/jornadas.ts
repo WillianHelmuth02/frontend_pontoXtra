@@ -14,6 +14,7 @@ export type StatusJornada = keyof typeof STATUS_LABELS;
 export type CadastroResumo = { id: string; nome: string; ativo?: boolean; valor_hora?: string };
 export type Jornada = {
   id: string;
+  criada_por: string;
   prestador_id: string;
   funcao_id: string;
   setor_id: string;
@@ -79,13 +80,18 @@ export const ACAO_LABELS: Record<AcaoJornada, string> = {
   entrada: 'Registrar entrada', 'inicio-intervalo': 'Iniciar intervalo',
   'fim-intervalo': 'Finalizar intervalo', saida: 'Registrar saída', conferir: 'Conferir jornada',
   autorizar: 'Autorizar', rejeitar: 'Rejeitar', corrigir: 'Corrigir jornada',
-  pagar: 'Registrar pagamento', cancelar: 'Cancelar jornada',
+  pagar: 'Registrar pagamento', cancelar: 'Excluir jornada',
 };
 
 /** Visibilidade de ações por perfil e estado. A API revalida tudo na transação,
  * inclusive quando outro usuário alterou a jornada depois desta consulta.
  */
-export function acoesPermitidas(perfil: string, j: Jornada): AcaoJornada[] {
+export function acoesPermitidas(perfil: string, j: Jornada, usuarioId?: string): AcaoJornada[] {
+  const semMarcacoes = j.status === 'EM_ANDAMENTO'
+    && !j.entrada_em && !j.inicio_intervalo_em && !j.fim_intervalo_em && !j.saida_em;
+  const podeExcluir = semMarcacoes && (perfil === 'RH'
+    || (['OPERACIONAL', 'ADMINISTRADOR'].includes(perfil) && !!usuarioId && j.criada_por === usuarioId));
+  if (podeExcluir) return perfil === 'OPERACIONAL' ? ['entrada', 'cancelar'] : ['cancelar'];
   if (perfil === 'OPERACIONAL' && j.status === 'EM_ANDAMENTO' && !j.saida_em) {
     if ((!j.entrada_em && (j.inicio_intervalo_em || j.fim_intervalo_em)) || (!j.inicio_intervalo_em && j.fim_intervalo_em)) return [];
     if (!j.entrada_em) return ['entrada'];
@@ -93,7 +99,6 @@ export function acoesPermitidas(perfil: string, j: Jornada): AcaoJornada[] {
     return j.inicio_intervalo_em ? ['saida'] : ['inicio-intervalo', 'saida'];
   }
   if (perfil === 'RH') {
-    if (j.status === 'EM_ANDAMENTO' && !j.entrada_em && !j.inicio_intervalo_em && !j.fim_intervalo_em && !j.saida_em) return ['cancelar'];
     if (j.status === 'AGUARDANDO_CONFERENCIA') return ['conferir', 'corrigir'];
     if (j.status === 'REJEITADO') return ['corrigir'];
     if (j.status === 'AUTORIZADO') return ['pagar'];

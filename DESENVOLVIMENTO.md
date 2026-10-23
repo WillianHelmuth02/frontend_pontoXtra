@@ -107,8 +107,10 @@ exige justificativa e devolve ao RH para correção e nova conferência. RH regi
 pagamento apenas de jornada Autorizada, informando data. Isso registra quitação,
 sem executar transferência financeira. Jornadas Pagas não oferecem alterações.
 
-A exclusão do CRUD é lógica: RH pode cancelar EM_ANDAMENTO sem qualquer marcação,
-com motivo obrigatório. CANCELADO preserva a linha e auditoria e libera uma nova
+A exclusão do CRUD é lógica: o criador pode excluir sua própria jornada EM_ANDAMENTO
+sem qualquer marcação, e RH mantém o cancelamento administrativo de jornadas alheias.
+Nos detalhes, Excluir jornada exige motivo e confirmação. A API revalida o ID do
+usuário e a autoria dentro da transação. CANCELADO preserva a linha e auditoria e libera uma nova
 jornada para o prestador. Não existe exclusão física ou restauração. Essa extensão
 exige o ENUM atualizado conforme `back/docs/jornadas-cancelamento.md`.
 
@@ -130,8 +132,11 @@ instante e alterações de cada campo; não oferece edição nem exclusão de au
 4. Entre como Administrador e rejeite com motivo. RH pode então corrigir os dados;
    confira recálculo e retorno a Aguardando conferência e faça nova conferência.
 5. Administrador autoriza. RH registra pagamento com data e verifica o estado Pago.
-6. Crie outra jornada e, antes de qualquer marcação, cancele como RH com motivo.
-   Confira o histórico e crie nova jornada para o mesmo prestador para validar a liberação.
+6. Crie outra jornada como Operacional ou RH e, antes de qualquer marcação, use
+   Excluir jornada nos detalhes com motivo. Como outro Operacional, a ação não deve
+   aparecer e a chamada direta deve falhar. RH mantém cancelamento administrativo.
+   Confira o histórico, o status Cancelado e a criação de nova jornada para o mesmo
+   prestador. Uma jornada com entrada não deve oferecer nem aceitar exclusão.
 7. Verifique filtros por data, prestador, status e os estados de lista vazia/erro.
    Operacional não deve receber ações de RH/Administrador e vice-versa.
 

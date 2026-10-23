@@ -41,10 +41,24 @@ async function run() {
     assert.equal(podeRegistrarEntrada('OPERACIONAL', { ...open, status }), false);
   }
   // Matriz dos demais eventos: intervalo aberto bloqueia saída; fim do intervalo
-  // não libera um segundo intervalo. Cancelamento só cabe ao RH antes de marcações.
-  const base = { ...open, inicio_intervalo_em: null, fim_intervalo_em: null };
+  // não libera um segundo intervalo. Exclusão cabe ao criador ou RH sem marcações.
+  const base = { ...open, criada_por: '9007199254740993', inicio_intervalo_em: null, fim_intervalo_em: null };
   assert.deepEqual(rules.acoesPermitidas('OPERACIONAL', base), ['entrada']);
   assert.deepEqual(rules.acoesPermitidas('RH', base), ['cancelar']);
+  assert.deepEqual(rules.acoesPermitidas('OPERACIONAL', base, base.criada_por), ['entrada', 'cancelar']);
+  assert.deepEqual(rules.acoesPermitidas('OPERACIONAL', base, '9007199254740992'), ['entrada']);
+  assert.deepEqual(rules.acoesPermitidas('ADMINISTRADOR', base, base.criada_por), ['cancelar']);
+  assert.deepEqual(rules.acoesPermitidas('ADMINISTRADOR', base, '8'), []);
+  assert.deepEqual(rules.acoesPermitidas('ADMINISTRADOR', base), []);
+  assert.equal(rules.ACAO_LABELS.cancelar, 'Excluir jornada');
+  for (const perfil of ['OPERACIONAL', 'RH', 'ADMINISTRADOR']) {
+    for (const campo of ['entrada_em', 'inicio_intervalo_em', 'fim_intervalo_em', 'saida_em']) {
+      assert.equal(rules.acoesPermitidas(perfil, { ...base, [campo]: '2026-10-18T10:00:00Z' }, base.criada_por).includes('cancelar'), false);
+    }
+    for (const status of Object.keys(rules.STATUS_LABELS).filter((s) => s !== 'EM_ANDAMENTO')) {
+      assert.equal(rules.acoesPermitidas(perfil, { ...base, status }, base.criada_por).includes('cancelar'), false);
+    }
+  }
   assert.deepEqual(rules.acoesPermitidas('OPERACIONAL', { ...base, entrada_em: '2026-10-18T10:00:00Z' }), ['inicio-intervalo', 'saida']);
   assert.deepEqual(rules.acoesPermitidas('OPERACIONAL', { ...base, entrada_em: '2026-10-18T10:00:00Z', inicio_intervalo_em: '2026-10-18T12:00:00Z' }), ['fim-intervalo']);
   assert.deepEqual(rules.acoesPermitidas('OPERACIONAL', { ...base, entrada_em: '2026-10-18T10:00:00Z', inicio_intervalo_em: '2026-10-18T12:00:00Z', fim_intervalo_em: '2026-10-18T13:00:00Z' }), ['saida']);
