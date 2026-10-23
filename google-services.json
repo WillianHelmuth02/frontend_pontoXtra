@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "580349587440",
+    "project_id": "pontoxtra",
+    "storage_bucket": "pontoxtra.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:580349587440:android:5e6e25bfeac51da63f3735",
+        "android_client_info": {
+          "package_name": "com.pontoxtra.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCMqNHcqOOAOD3OBbNDpqR9C23N2Uvsh7U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "front",
-    "slug": "front",
+    "slug": "pontoxtra",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -11,6 +11,7 @@
       "icon": "./assets/expo.icon"
     },
     "android": {
+      "package": "com.pontoxtra.mobile",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -37,6 +38,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "30458422-6b9a-441b-b5a9-4fdce1887405"
+      }
+    },
+    "owner": "willianhelmuhts-team"
   }
 }
