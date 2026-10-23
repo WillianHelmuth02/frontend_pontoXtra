@@ -5,8 +5,8 @@ import { ActivityIndicator, FlatList, Modal, Pressable, ScrollView, StyleSheet, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/auth';
 import { api } from '@/services/api';
-import { carregarJornadas } from '@/services/jornadas';
-import { FILTROS_VAZIOS, STATUS_LABELS, formatarData, podeRegistrarEntrada, queryJornadas, type FiltrosJornadas, type Jornada } from '@/utils/jornadas';
+import { carregarJornadas, operarLixeira } from '@/services/jornadas';
+import { FILTROS_VAZIOS, STATUS_LABELS, formatarData, podeRegistrarEntrada, podeEnviarLixeira, queryJornadas, type FiltrosJornadas, type Jornada } from '@/utils/jornadas';
 
 const BLUE = '#005BCC';
 const PROFILE_LABELS = { OPERACIONAL: 'Operacional', RH: 'RH', ADMINISTRADOR: 'Administrador' };
@@ -38,6 +38,9 @@ export function JornadasScreen() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [prestadorSearch, setPrestadorSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [exclusionMode, setExclusionMode] = useState(false);
+  const [exclusionIds, setExclusionIds] = useState<string[]>([]);
+  const [exclusionConfirm, setExclusionConfirm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [fresh, setFresh] = useState(false);
   const [pending, setPending] = useState(false);
@@ -59,6 +62,7 @@ export function JornadasScreen() {
       setFresh(true);
       // Preserva a seleção apenas se ela ainda pertence à consulta atual.
       setSelectedId((id) => result.jornadas.some((jornada) => jornada.id === id) ? id : null);
+      setExclusionIds((ids) => ids.filter((id) => result.jornadas.some((jornada) => jornada.id === id)));
     }).catch((cause: unknown) => {
       if (current === generation.current) setError(cause instanceof Error ? cause.message : 'Não foi possível carregar as jornadas.');
     }).finally(() => {
@@ -85,7 +89,9 @@ export function JornadasScreen() {
   }, [usuario, filtros, load]));
 
   const selected = dados.jornadas.find((jornada) => jornada.id === selectedId);
-  const canEnter = fresh && !loading && !pending && !!usuario && podeRegistrarEntrada(usuario.perfil, selected);
+  const canEnter = !exclusionMode && fresh && !loading && !pending && !!usuario && podeRegistrarEntrada(usuario.perfil, selected);
+  const canExclude = fresh && !loading && !pending && !!usuario && exclusionIds.length > 0 && exclusionIds.length <= 50
+    && exclusionIds.every((id) => dados.jornadas.some((jornada) => jornada.id === id && podeEnviarLixeira(usuario.perfil, jornada, usuario.id)));
   const nomesPrestadores = new Map(dados.prestadores.map((item) => [item.id, item.nome]));
   const nomesFuncoes = new Map(dados.funcoes.map((item) => [item.id, item.nome]));
   const nomesSetores = new Map(dados.setores.map((item) => [item.id, item.nome]));
@@ -128,10 +134,25 @@ export function JornadasScreen() {
       setError('');
       setFiltros({ ...next });
       setSelectedId(null);
+      setExclusionIds([]);
       setNotice('');
       setFilterOpen(false);
       setFilterError('');
     } catch (cause) { setFilterError(cause instanceof Error ? cause.message : 'Filtros inválidos.'); }
+  }
+
+  async function excludeSelected() {
+    if (!canExclude || writing.current) return;
+    writing.current = true; setPending(true); setExclusionConfirm(false); setNotice(''); setError('');
+    try {
+      const result = await operarLixeira(exclusionIds, 'enviar');
+      setNotice(`${result.quantidade} jornada(s) enviada(s) à lixeira.`);
+    } catch (cause) {
+      setNotice(`${cause instanceof Error ? cause.message : 'Não foi possível excluir.'} Confira a lista e a lixeira antes de tentar novamente.`);
+    } finally {
+      setExclusionIds([]); setLoading(true); setFresh(false);
+      await load(filtros); writing.current = false; setPending(false);
+    }
   }
 
   if (!usuario) return <Redirect href="/login" />;
@@ -148,7 +169,7 @@ export function JornadasScreen() {
           ref={list}
           data={fresh ? dados.jornadas : []}
           keyExtractor={(item) => item.id}
-          extraData={selectedId}
+          extraData={{ selectedId, exclusionMode, exclusionIds }}
           contentContainerStyle={styles.listContent}
           refreshing={loading}
           onRefresh={reload}
@@ -159,6 +180,14 @@ export function JornadasScreen() {
             </View>
             <Text accessibilityRole="header" style={styles.title}>Jornadas</Text>
             {usuario.perfil !== 'ADMINISTRADOR' && <Pressable accessibilityRole="button" disabled={pending} onPress={() => router.push('/nova-jornada')} style={styles.newButton}><Text style={styles.primaryText}>+ Nova jornada</Text></Pressable>}
+            <View style={[styles.toolbar, { flexWrap: 'wrap', gap: 8 }]}>
+              <Pressable accessibilityRole="button" disabled={pending || loading} onPress={() => { setExclusionMode(!exclusionMode); setExclusionIds([]); setSelectedId(null); setNotice(''); }}><Text style={styles.filterButton}>{exclusionMode ? 'Encerrar seleção' : 'Selecionar para excluir'}</Text></Pressable>
+              <Pressable accessibilityRole="button" disabled={pending} onPress={() => router.push('/lixeira')}><Text style={styles.filterButton}>Lixeira</Text></Pressable>
+            </View>
+            {exclusionMode && <>
+              <Text style={styles.hint}>Selecione até 50 jornadas canceladas de sua autoria. RH pode selecionar canceladas de outros usuários. O envio à lixeira preserva os dados até a exclusão definitiva.</Text>
+              <Pressable accessibilityRole="button" accessibilityState={{ disabled: !canExclude }} disabled={!canExclude} onPress={() => setExclusionConfirm(true)} style={[styles.newButton, !canExclude && styles.disabled]}><Text style={styles.primaryText}>Excluir selecionadas ({exclusionIds.length})</Text></Pressable>
+            </>}
             <View style={styles.toolbar}>
               <Text style={styles.count}>{loading ? 'Carregando…' : fresh ? `${dados.jornadas.length} jornada(s)` : 'Consulta indisponível'}</Text>
               <Pressable accessibilityRole="button" disabled={loading || pending} onPress={() => { setRascunho({ ...filtros }); setFilterError(''); setPrestadorSearch(''); setFilterOpen(true); }}>
@@ -172,10 +201,15 @@ export function JornadasScreen() {
           </>}
           ListEmptyComponent={loading ? <ActivityIndicator color={BLUE} style={styles.empty} /> : !error ? <Text style={styles.empty}>Nenhuma jornada encontrada{activeFilters ? ' para os filtros informados' : ''}.</Text> : null}
           renderItem={({ item }) => {
-            const checked = item.id === selectedId;
+            const checked = exclusionMode ? exclusionIds.includes(item.id) : item.id === selectedId;
+            const selectionDisabled = pending || loading || (exclusionMode && (!podeEnviarLixeira(usuario.perfil, item, usuario.id) || (!checked && exclusionIds.length >= 50)));
             const nome = nomesPrestadores.get(item.prestador_id) ?? `Prestador #${item.prestador_id}`;
             return <View style={[styles.row, checked && styles.rowSelected]}>
-              <Pressable accessibilityRole="radio" accessibilityState={{ checked, disabled: pending }} accessibilityLabel={`${nome}, ${formatarData(item.data_jornada)}, ${STATUS_LABELS[item.status]}`} disabled={pending || loading} onPress={() => { setSelectedId(checked ? null : item.id); setNotice(''); }} style={styles.selectArea}>
+              <Pressable accessibilityRole={exclusionMode ? 'checkbox' : 'radio'} accessibilityState={{ checked, disabled: selectionDisabled }} accessibilityLabel={`${nome}, ${formatarData(item.data_jornada)}, ${STATUS_LABELS[item.status]}`} disabled={selectionDisabled} onPress={() => {
+                if (exclusionMode) setExclusionIds((ids) => checked ? ids.filter((id) => id !== item.id) : [...ids, item.id]);
+                else setSelectedId(checked ? null : item.id);
+                setNotice('');
+              }} style={[styles.selectArea, exclusionMode && selectionDisabled && styles.disabled]}>
               <WorkIcon />
               <View style={styles.rowText}>
                 <Text style={styles.person}>{nome}</Text>
@@ -190,7 +224,7 @@ export function JornadasScreen() {
           }}
         />
         {/* Indica por que a ação está indisponível sem inventar uma mudança de status. */}
-        {usuario.perfil === 'OPERACIONAL' && <Text style={styles.hint}>{pending ? 'Confirmando entrada…' : canEnter ? 'Jornada selecionada. Toque em Entrada para confirmar.' : 'Selecione uma jornada em andamento e sem entrada registrada.'}</Text>}
+        {usuario.perfil === 'OPERACIONAL' && <Text style={styles.hint}>{pending ? 'Registrando ação…' : exclusionMode ? 'Encerre a seleção de exclusão para registrar entrada.' : canEnter ? 'Jornada selecionada. Toque em Entrada para confirmar.' : 'Selecione uma jornada em andamento e sem entrada registrada.'}</Text>}
       </View>
       <SafeAreaView edges={['bottom']} style={styles.bottomSafe}>
         <View style={styles.footer}>
@@ -201,6 +235,16 @@ export function JornadasScreen() {
       </SafeAreaView>
 
       {/* Modal compartilhado entre Web e mobile; Alert nativo não atende a Web. */}
+      <Modal transparent visible={exclusionConfirm} animationType="fade" onRequestClose={() => setExclusionConfirm(false)}>
+        <View style={styles.overlay}><View accessibilityViewIsModal style={styles.dialog}>
+          <Text style={styles.dialogTitle}>Excluir {exclusionIds.length} jornada(s)?</Text>
+          <Text style={styles.dialogText}>Somente as canceladas selecionadas serão enviadas à lixeira e deixarão de aparecer na lista. Você poderá consultá-las ou restaurá-las como Cancelado antes da exclusão definitiva.</Text>
+          <View style={styles.actions}>
+            <Pressable accessibilityRole="button" onPress={() => setExclusionConfirm(false)} style={styles.secondary}><Text style={styles.filterButton}>Voltar</Text></Pressable>
+            <Pressable accessibilityRole="button" disabled={!canExclude} onPress={excludeSelected} style={[styles.primary, !canExclude && styles.disabled]}><Text style={styles.primaryText}>Excluir selecionadas</Text></Pressable>
+          </View>
+        </View></View>
+      </Modal>
       <Modal transparent visible={confirmation} animationType="fade" onRequestClose={() => setConfirmation(false)}>
         <View style={styles.overlay}><View accessibilityViewIsModal style={styles.dialog}>
           <Text accessibilityRole="header" style={styles.dialogTitle}>Registrar entrada?</Text>

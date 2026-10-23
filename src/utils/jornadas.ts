@@ -15,6 +15,8 @@ export type CadastroResumo = { id: string; nome: string; ativo?: boolean; valor_
 export type Jornada = {
   id: string;
   criada_por: string;
+  excluida_em: string | null;
+  excluida_por: string | null;
   prestador_id: string;
   funcao_id: string;
   setor_id: string;
@@ -80,13 +82,14 @@ export const ACAO_LABELS: Record<AcaoJornada, string> = {
   entrada: 'Registrar entrada', 'inicio-intervalo': 'Iniciar intervalo',
   'fim-intervalo': 'Finalizar intervalo', saida: 'Registrar saída', conferir: 'Conferir jornada',
   autorizar: 'Autorizar', rejeitar: 'Rejeitar', corrigir: 'Corrigir jornada',
-  pagar: 'Registrar pagamento', cancelar: 'Excluir jornada',
+  pagar: 'Registrar pagamento', cancelar: 'Cancelar jornada',
 };
 
 /** Visibilidade de ações por perfil e estado. A API revalida tudo na transação,
  * inclusive quando outro usuário alterou a jornada depois desta consulta.
  */
 export function acoesPermitidas(perfil: string, j: Jornada, usuarioId?: string): AcaoJornada[] {
+  if (j.excluida_em) return [];
   const semMarcacoes = j.status === 'EM_ANDAMENTO'
     && !j.entrada_em && !j.inicio_intervalo_em && !j.fim_intervalo_em && !j.saida_em;
   const podeExcluir = semMarcacoes && (perfil === 'RH'
@@ -105,6 +108,21 @@ export function acoesPermitidas(perfil: string, j: Jornada, usuarioId?: string):
   }
   if (perfil === 'ADMINISTRADOR' && j.status === 'AGUARDANDO_AUTORIZACAO') return ['autorizar', 'rejeitar'];
   return [];
+}
+
+/** A seleção em lote só antecipa a regra; o servidor verifica cada registro. */
+export function podeEnviarLixeira(perfil: string, j: Jornada, usuarioId: string): boolean {
+  return j.status === 'CANCELADO' && !j.excluida_em
+    && !j.entrada_em && !j.inicio_intervalo_em && !j.fim_intervalo_em && !j.saida_em
+    && (perfil === 'RH' || (['OPERACIONAL', 'ADMINISTRADOR'].includes(perfil) && j.criada_por === usuarioId));
+}
+
+export function validarLoteLixeira(ids: string[]): string[] {
+  if (ids.length < 1 || ids.length > 50 || new Set(ids).size !== ids.length
+    || ids.some((id) => !/^[1-9]\d{0,19}$/.test(id) || BigInt(id) > 18446744073709551615n)) {
+    throw new Error('Selecione de 1 a 50 jornadas diferentes.');
+  }
+  return [...ids];
 }
 
 /** Mostra DECIMAL em reais sem converter para ponto flutuante. */

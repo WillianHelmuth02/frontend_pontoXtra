@@ -10,7 +10,7 @@ import { Button, Field, JourneyShell, ResourceState, ui } from './journey-ui';
 
 const HISTORICO_LABELS: Record<string, string> = {
   CRIACAO: 'Criação', ENTRADA: 'Entrada', INICIO_INTERVALO: 'Início do intervalo', FIM_INTERVALO: 'Fim do intervalo',
-  SAIDA: 'Saída', CONFERENCIA: 'Conferência', AUTORIZACAO: 'Autorização', REJEICAO: 'Rejeição', CORRECAO: 'Correção', PAGAMENTO: 'Pagamento', CANCELAMENTO: 'Cancelamento',
+  SAIDA: 'Saída', CONFERENCIA: 'Conferência', AUTORIZACAO: 'Autorização', REJEICAO: 'Rejeição', CORRECAO: 'Correção', PAGAMENTO: 'Pagamento', CANCELAMENTO: 'Cancelamento', EXCLUSAO: 'Envio à lixeira', RESTAURACAO: 'Restauração da lixeira',
 };
 const CAMPOS: Record<string, string> = {
   entrada_em: 'Entrada', inicio_intervalo_em: 'Início do intervalo', fim_intervalo_em: 'Fim do intervalo', saida_em: 'Saída',
@@ -18,6 +18,7 @@ const CAMPOS: Record<string, string> = {
   status: 'Status', conferida_por: 'Conferida pelo usuário', conferida_em: 'Conferência', decidida_por: 'Decidida pelo usuário', decidida_em: 'Decisão',
   justificativa_rejeicao: 'Justificativa de rejeição', justificativa_cancelamento: 'Motivo do cancelamento', paga_por: 'Pagamento registrado pelo usuário', data_pagamento: 'Data de pagamento',
   prestador_id: 'Prestador (ID)', funcao_id: 'Função (ID)', setor_id: 'Setor (ID)', criada_por: 'Criada pelo usuário',
+  excluida_em: 'Enviada à lixeira em', excluida_por: 'Enviada à lixeira pelo usuário',
 };
 function auditValue(key: string, value: unknown): string {
   if (value == null) return 'Não informado';
@@ -31,7 +32,7 @@ function auditValue(key: string, value: unknown): string {
 /** Auditoria somente leitura. Exibe alterações campo a campo, sem oferecer
  * edição do histórico. Autor usa ID porque a API de usuários é restrita ao ADM.
  */
-function History({ items }: { items: HistoricoJornada[] }) {
+export function History({ items }: { items: HistoricoJornada[] }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   return <>
     <Text accessibilityRole="header" style={ui.title}>Histórico de alterações</Text>
@@ -142,7 +143,7 @@ export default function JourneyDetails({ id, criada }: { id: string; criada: boo
         <View accessibilityViewIsModal style={[ui.card, { width: '100%', maxWidth: 520, backgroundColor: '#FFFFFF' }]}>
           <Text accessibilityRole="header" style={ui.subtitle}>{action ? ACAO_LABELS[action] : ''}?</Text>
           <Text style={ui.text}>Jornada #{id} · {data?.prestadores.find((item) => item.id === j?.prestador_id)?.nome}</Text>
-          {action === 'cancelar' ? <Text style={ui.text}>A exclusão preserva a jornada e seu histórico, com status Cancelado. Só é permitida antes de qualquer marcação e libera o prestador para outra jornada. Não é possível restaurá-la.</Text>
+          {action === 'cancelar' ? <Text style={ui.text}>O cancelamento preserva a jornada e seu histórico, com status Cancelado. Só é permitido antes de qualquer marcação e libera o prestador para outra jornada. Para removê-la da lista depois, use Excluir selecionadas na consulta de jornadas.</Text>
             : action === 'pagar' ? <Text style={ui.text}>Este registro informa a quitação, sem realizar transferência bancária.</Text>
               : <Text style={ui.text}>A ação será registrada no histórico. Marcações operacionais usam o horário atual do servidor.</Text>}
           {(action === 'cancelar' || action === 'rejeitar') && <Field label="Justificativa *" value={motivo} onChangeText={setMotivo} multiline disabled={pending} />}

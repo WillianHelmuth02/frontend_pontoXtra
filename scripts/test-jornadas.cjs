@@ -50,7 +50,25 @@ async function run() {
   assert.deepEqual(rules.acoesPermitidas('ADMINISTRADOR', base, base.criada_por), ['cancelar']);
   assert.deepEqual(rules.acoesPermitidas('ADMINISTRADOR', base, '8'), []);
   assert.deepEqual(rules.acoesPermitidas('ADMINISTRADOR', base), []);
-  assert.equal(rules.ACAO_LABELS.cancelar, 'Excluir jornada');
+  assert.equal(rules.ACAO_LABELS.cancelar, 'Cancelar jornada');
+  const cancelled = { ...base, status: 'CANCELADO', excluida_em: null };
+  assert.equal(rules.podeEnviarLixeira('OPERACIONAL', cancelled, base.criada_por), true);
+  assert.equal(rules.podeEnviarLixeira('OPERACIONAL', cancelled, '7'), false);
+  assert.equal(rules.podeEnviarLixeira('RH', cancelled, '7'), true);
+  assert.equal(rules.podeEnviarLixeira('ADMINISTRADOR', cancelled, '7'), false);
+  assert.equal(rules.podeEnviarLixeira('ADMINISTRADOR', cancelled, base.criada_por), true);
+  assert.equal(rules.podeEnviarLixeira('RH', { ...cancelled, excluida_em: '2026-10-22T00:00:00Z' }, '7'), false);
+  assert.deepEqual(rules.acoesPermitidas('RH', { ...base, excluida_em: '2026-10-22T00:00:00Z' }, base.criada_por), []);
+  for (const status of Object.keys(rules.STATUS_LABELS).filter((s) => s !== 'CANCELADO')) {
+    assert.equal(rules.podeEnviarLixeira('RH', { ...cancelled, status }, '7'), false);
+  }
+  for (const field of ['entrada_em', 'inicio_intervalo_em', 'fim_intervalo_em', 'saida_em']) {
+    assert.equal(rules.podeEnviarLixeira('RH', { ...cancelled, [field]: '2026-10-22T00:00:00Z' }, '7'), false);
+  }
+  assert.deepEqual(rules.validarLoteLixeira(['9007199254740993']), ['9007199254740993']);
+  for (const ids of [[], ['1', '1'], ['0'], ['01'], ['18446744073709551616'], Array.from({ length: 51 }, (_, i) => String(i + 1))]) {
+    assert.throws(() => rules.validarLoteLixeira(ids));
+  }
   for (const perfil of ['OPERACIONAL', 'RH', 'ADMINISTRADOR']) {
     for (const campo of ['entrada_em', 'inicio_intervalo_em', 'fim_intervalo_em', 'saida_em']) {
       assert.equal(rules.acoesPermitidas(perfil, { ...base, [campo]: '2026-10-18T10:00:00Z' }, base.criada_por).includes('cancelar'), false);
@@ -93,6 +111,19 @@ async function run() {
   });
   assert.deepEqual(await service.carregarJornadas(FILTROS_VAZIOS), { jornadas: [], prestadores: [], funcoes: [], setores: [] });
   assert.deepEqual(requests, ['/jornadas', '/prestadores', '/funcoes', '/setores']);
+  const writes = [];
+  const trashService = load('src/services/jornadas.ts', {
+    '@/utils/jornadas': rules,
+    '@/services/api': { api: async (url, options) => { writes.push({ url, options }); return { quantidade: 1 }; } },
+  });
+  await trashService.operarLixeira(['9007199254740993'], 'enviar');
+  await trashService.operarLixeira(['9007199254740993'], 'restaurar');
+  await trashService.operarLixeira(['9007199254740993'], 'excluir');
+  assert.deepEqual(writes.map(({ url, options }) => [url, options.method]), [
+    ['/jornadas/lixeira/enviar', 'POST'], ['/jornadas/lixeira/restaurar', 'POST'], ['/jornadas/lixeira', 'DELETE'],
+  ]);
+  assert.deepEqual(JSON.parse(writes[2].options.body), { ids: ['9007199254740993'] });
+  assert.throws(() => trashService.operarLixeira([], 'excluir'));
   console.log('Jornadas: consultas, filtros, datas, IDs grandes, correção, fuso, dinheiro e matriz de ações por perfil validados.');
 }
 run().catch((error) => { console.error(error); process.exitCode = 1; });

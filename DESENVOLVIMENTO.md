@@ -1,5 +1,22 @@
 # Desenvolvimento local Web
 
+## Lixeira e exclusão definitiva
+
+A ação nos detalhes agora se chama Cancelar jornada. Na lista, Selecionar para excluir
+abre um modo separado para marcar até 50 canceladas elegíveis e usar Excluir selecionadas.
+As jornadas enviadas saem da lista, dos detalhes normais e dos relatórios/totais.
+Acesso Lixeira abre `/lixeira`; RH vê todas, os demais perfis veem as próprias.
+É possível consultar o histórico, restaurar como Cancelado ou confirmar Excluir
+definitivamente, que remove a jornada e todos os seus registros de histórico do banco.
+Depois da purga não há restauração pelo aplicativo. Cadastros compartilhados não são apagados.
+
+O modo de exclusão não registra Entrada. Encerre a seleção para voltar à seleção
+única de jornada em execução. Escritas não são repetidas automaticamente após falha.
+
+O backend precisa da migração `node dist/migrate-lixeira.js --apply` (após build);
+ela já foi aplicada na base local desta entrega. Outros ambientes precisam aplicá-la.
+Consulte `back/docs/jornadas-lixeira.md` e a DEC-003 na memória para o contrato e o roteiro.
+
 > Regra de produto revisada em 22/10/2026: a criação deve aguardar aprovação do ADM para realização; após a execução e a conferência do RH, uma segunda aprovação autoriza o pagamento. A [DEC-001](../Memoria_Projeto/decisoes/DEC-001-DUPLA-APROVACAO.md) é a referência vigente. Implementação pendente: as telas e o roteiro abaixo ainda descrevem o fluxo atual com apenas a decisão posterior.
 
 ## Iniciar
@@ -46,7 +63,7 @@ A composição usa azul e verde da referência, saudação real, cartões seleci
 e rodapé fixo. O relógio, Wi-Fi e sinal da imagem pertencem ao sistema do aparelho
 e não são simulados na página. A tela tem largura máxima de 680 para leitura na Web.
 
-Sem filtros, são consultadas todas as jornadas, em qualquer data e status. A ordem
+Sem filtros, são consultadas as jornadas fora da lixeira, em qualquer data e status. A ordem
 vem da API: data de referência decrescente e ID decrescente. Não há paginação nessa
 API; a FlatList virtualiza os cartões. Os cadastros são consultados sem restringir
 a registros ativos, pois jornadas históricas podem referenciar cadastros inativados.
@@ -109,9 +126,10 @@ sem executar transferência financeira. Jornadas Pagas não oferecem alteraçõe
 
 A exclusão do CRUD é lógica: o criador pode excluir sua própria jornada EM_ANDAMENTO
 sem qualquer marcação, e RH mantém o cancelamento administrativo de jornadas alheias.
-Nos detalhes, Excluir jornada exige motivo e confirmação. A API revalida o ID do
+Nos detalhes, Cancelar jornada exige motivo e confirmação. A API revalida o ID do
 usuário e a autoria dentro da transação. CANCELADO preserva a linha e auditoria e libera uma nova
-jornada para o prestador. Não existe exclusão física ou restauração. Essa extensão
+jornada para o prestador. O cancelamento não reabre a execução; a lixeira oferece
+restauração como Cancelado ou exclusão física de jornada e histórico. O cancelamento
 exige o ENUM atualizado conforme `back/docs/jornadas-cancelamento.md`.
 
 Todos os comandos de escrita pedem confirmação, exceto a criação, que usa o botão
@@ -133,7 +151,7 @@ instante e alterações de cada campo; não oferece edição nem exclusão de au
    confira recálculo e retorno a Aguardando conferência e faça nova conferência.
 5. Administrador autoriza. RH registra pagamento com data e verifica o estado Pago.
 6. Crie outra jornada como Operacional ou RH e, antes de qualquer marcação, use
-   Excluir jornada nos detalhes com motivo. Como outro Operacional, a ação não deve
+   Cancelar jornada nos detalhes com motivo. Como outro Operacional, a ação não deve
    aparecer e a chamada direta deve falhar. RH mantém cancelamento administrativo.
    Confira o histórico, o status Cancelado e a criação de nova jornada para o mesmo
    prestador. Uma jornada com entrada não deve oferecer nem aceitar exclusão.

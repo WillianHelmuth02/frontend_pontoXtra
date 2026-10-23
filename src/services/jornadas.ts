@@ -1,5 +1,5 @@
 import { api } from '@/services/api';
-import { queryJornadas, type CadastroResumo, type FiltrosJornadas, type HistoricoJornada, type Jornada } from '@/utils/jornadas';
+import { queryJornadas, validarLoteLixeira, type CadastroResumo, type FiltrosJornadas, type HistoricoJornada, type Jornada } from '@/utils/jornadas';
 
 /** A API de jornadas retorna vínculos por ID, sem nomes expandidos.
  * Buscamos cada catálogo uma vez por atualização (não uma chamada por linha).
@@ -32,4 +32,23 @@ export async function carregarDetalhes(id: string) {
     api<CadastroResumo[]>('/prestadores'), api<CadastroResumo[]>('/funcoes'), api<CadastroResumo[]>('/setores'),
   ]);
   return { jornada, historico, prestadores, funcoes, setores };
+}
+
+export async function carregarLixeira() {
+  const [jornadas, prestadores, funcoes, setores] = await Promise.all([
+    api<Jornada[]>('/jornadas/lixeira'), api<CadastroResumo[]>('/prestadores'),
+    api<CadastroResumo[]>('/funcoes'), api<CadastroResumo[]>('/setores'),
+  ]);
+  return { jornadas, prestadores, funcoes, setores };
+}
+
+export function detalhesLixeira(id: string) {
+  return api<{ jornada: Jornada; historico: HistoricoJornada[] }>(`/jornadas/lixeira/${id}`);
+}
+
+export function operarLixeira(ids: string[], acao: 'enviar' | 'restaurar' | 'excluir') {
+  const lote = validarLoteLixeira(ids);
+  return api<{ quantidade: number }>(acao === 'excluir' ? '/jornadas/lixeira' : `/jornadas/lixeira/${acao}`, {
+    method: acao === 'excluir' ? 'DELETE' : 'POST', body: JSON.stringify({ ids: lote }),
+  });
 }
