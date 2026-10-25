@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type PropsWithChildren } from 'react';
 import { api, ApiError, configureSession } from '@/services/api';
+import { removerPush } from '@/services/push';
 
 /** Contrato público de usuário retornado pela API; IDs BIGINT são strings. */
 type Usuario = { id: string; nome: string; email: string; perfil: 'OPERACIONAL' | 'RH' | 'ADMINISTRADOR'; ativo: boolean };
@@ -40,6 +41,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   async function logout() {
     try {
+      await removerPush();
       await api<void>('/auth/logout', { method: 'POST' });
       clear();
     } catch (error) {

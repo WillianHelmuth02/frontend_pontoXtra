@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/auth';
+import { NotificationLink } from '@/components/notification-link';
 import { api } from '@/services/api';
 import { carregarJornadas, operarLixeira } from '@/services/jornadas';
 import { FILTROS_VAZIOS, STATUS_LABELS, formatarData, podeRegistrarEntrada, podeEnviarLixeira, queryJornadas, type FiltrosJornadas, type Jornada } from '@/utils/jornadas';
@@ -162,7 +163,7 @@ export function JornadasScreen() {
       <StatusBar style="light" />
       {/* A barra do sistema pertence ao aparelho: não simulamos relógio ou sinal. */}
       <SafeAreaView edges={['top']} style={styles.topSafe}>
-        <View style={styles.header}><Text accessibilityRole="header" style={styles.brand}>PontoXtra</Text></View>
+        <View style={styles.header}><Text accessibilityRole="header" style={styles.brand}>PontoXtra</Text><NotificationLink /></View>
       </SafeAreaView>
       <View style={styles.body}>
         <FlatList
@@ -224,7 +225,7 @@ export function JornadasScreen() {
           }}
         />
         {/* Indica por que a ação está indisponível sem inventar uma mudança de status. */}
-        {usuario.perfil === 'OPERACIONAL' && <Text style={styles.hint}>{pending ? 'Registrando ação…' : exclusionMode ? 'Encerre a seleção de exclusão para registrar entrada.' : canEnter ? 'Jornada selecionada. Toque em Entrada para confirmar.' : 'Selecione uma jornada em andamento e sem entrada registrada.'}</Text>}
+        {usuario.perfil === 'OPERACIONAL' && <Text style={styles.hint}>{pending ? 'Registrando ação…' : exclusionMode ? 'Encerre a seleção de exclusão para registrar entrada.' : canEnter ? 'Jornada selecionada. Toque em Entrada para confirmar.' : 'Selecione uma jornada autorizada pelo ADM para realização e sem entrada registrada.'}</Text>}
       </View>
       <SafeAreaView edges={['bottom']} style={styles.bottomSafe}>
         <View style={styles.footer}>

@@ -9,13 +9,15 @@ import { ACAO_LABELS, STATUS_LABELS, acoesPermitidas, dataParaApi, dinheiro, for
 import { Button, Field, JourneyShell, ResourceState, ui } from './journey-ui';
 
 const HISTORICO_LABELS: Record<string, string> = {
+  AUTORIZACAO_REALIZACAO: 'Autorização da realização', REJEICAO_REALIZACAO: 'Rejeição da realização',
   CRIACAO: 'Criação', ENTRADA: 'Entrada', INICIO_INTERVALO: 'Início do intervalo', FIM_INTERVALO: 'Fim do intervalo',
-  SAIDA: 'Saída', CONFERENCIA: 'Conferência', AUTORIZACAO: 'Autorização', REJEICAO: 'Rejeição', CORRECAO: 'Correção', PAGAMENTO: 'Pagamento', CANCELAMENTO: 'Cancelamento', EXCLUSAO: 'Envio à lixeira', RESTAURACAO: 'Restauração da lixeira',
+  SAIDA: 'Saída', CONFERENCIA: 'Conferência', AUTORIZACAO: 'Autorização de pagamento', REJEICAO: 'Rejeição de pagamento', CORRECAO: 'Correção', PAGAMENTO: 'Pagamento', CANCELAMENTO: 'Cancelamento', EXCLUSAO: 'Envio à lixeira', RESTAURACAO: 'Restauração da lixeira',
 };
 const CAMPOS: Record<string, string> = {
+  realizacao_decidida_por: 'Realização decidida pelo usuário', realizacao_decidida_em: 'Decisão de realização', justificativa_rejeicao_realizacao: 'Motivo da rejeição de realização', legado_sem_aprovacao_previa: 'Legado sem aprovação prévia',
   entrada_em: 'Entrada', inicio_intervalo_em: 'Início do intervalo', fim_intervalo_em: 'Fim do intervalo', saida_em: 'Saída',
   data_jornada: 'Data de referência', valor_hora: 'Valor/hora', valor_calculado: 'Valor calculado', minutos_trabalhados: 'Minutos trabalhados',
-  status: 'Status', conferida_por: 'Conferida pelo usuário', conferida_em: 'Conferência', decidida_por: 'Decidida pelo usuário', decidida_em: 'Decisão',
+  status: 'Status', conferida_por: 'Conferida pelo usuário', conferida_em: 'Conferência', decidida_por: 'Pagamento decidido pelo usuário', decidida_em: 'Decisão de pagamento',
   justificativa_rejeicao: 'Justificativa de rejeição', justificativa_cancelamento: 'Motivo do cancelamento', paga_por: 'Pagamento registrado pelo usuário', data_pagamento: 'Data de pagamento',
   prestador_id: 'Prestador (ID)', funcao_id: 'Função (ID)', setor_id: 'Setor (ID)', criada_por: 'Criada pelo usuário',
   excluida_em: 'Enviada à lixeira em', excluida_por: 'Enviada à lixeira pelo usuário',
@@ -69,7 +71,7 @@ export default function JourneyDetails({ id, criada }: { id: string; criada: boo
   const [dataPagamento, setDataPagamento] = useState(() => horarioFormulario(new Date().toISOString()).slice(0, 10));
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState(criada ? 'Jornada criada. A entrada ainda não foi registrada.' : '');
+  const [notice, setNotice] = useState(criada ? 'Jornada criada. Aguarde a autorização de realização do ADM antes de registrar entrada.' : '');
   const writing = useRef(false);
   const data = resource.data;
   const j = data?.jornada;
@@ -79,7 +81,7 @@ export default function JourneyDetails({ id, criada }: { id: string; criada: boo
     if (!action || !usuario || !resource.fresh || writing.current) return;
     let body: Record<string, string> | undefined;
     try {
-      if (action === 'rejeitar' || action === 'cancelar') {
+      if (action === 'rejeitar' || action === 'rejeitar-realizacao' || action === 'cancelar') {
         if (!motivo.trim() || Array.from(motivo.trim()).length > 1000) throw new Error('Informe uma justificativa de 1 a 1000 caracteres.');
         body = { justificativa: motivo.trim() };
       }
@@ -117,17 +119,29 @@ export default function JourneyDetails({ id, criada }: { id: string; criada: boo
         <Text style={ui.label}>{STATUS_LABELS[j.status]}</Text>
       </View>
       <View style={ui.card}>
+        <Text style={ui.subtitle}>1. Autorização para realização</Text>
+        {j.legado_sem_aprovacao_previa ? <Text style={ui.text}>Jornada legada, já iniciada antes da nova regra. Não há aprovação prévia registrada.</Text>
+          : <Text style={ui.text}>{j.realizacao_decidida_em ? `Decisão em ${horarioFormulario(j.realizacao_decidida_em)} · Usuário #${j.realizacao_decidida_por}` : 'Ainda sem decisão do ADM para realização.'}</Text>}
+        {!!j.justificativa_rejeicao_realizacao && <Text style={ui.error}>Realização rejeitada: {j.justificativa_rejeicao_realizacao}</Text>}
+        {j.status === 'REALIZACAO_REJEITADA' && <Text style={ui.text}>A jornada não pode começar. O criador ou o RH pode cancelá-la e criar outra com os dados corrigidos.</Text>}
+      </View>
+      <View style={ui.card}>
         <Text style={ui.subtitle}>Marcações · Brasília (UTC-03)</Text>
         {(['entrada_em', 'inicio_intervalo_em', 'fim_intervalo_em', 'saida_em'] as const).map((key) => <Text key={key} style={ui.text}>{CAMPOS[key]}: {j[key] ? horarioFormulario(j[key]) : 'Não registrada'}</Text>)}
         <Text style={ui.text}>Valor/hora histórico: {dinheiro(j.valor_hora)}</Text>
         <Text style={ui.text}>Tempo líquido: {j.minutos_trabalhados === null ? 'Ainda não calculado' : `${Math.floor(j.minutos_trabalhados / 60)}h ${String(j.minutos_trabalhados % 60).padStart(2, '0')}min`}</Text>
         <Text style={ui.label}>Valor calculado: {dinheiro(j.valor_calculado)}</Text>
-        {!!j.justificativa_rejeicao && <Text style={ui.error}>Motivo da rejeição: {j.justificativa_rejeicao}</Text>}
+      </View>
+      <View style={ui.card}>
+        <Text style={ui.subtitle}>2. Autorização de pagamento</Text>
+        <Text style={ui.text}>Conferência RH: {j.conferida_em ? horarioFormulario(j.conferida_em) : 'Pendente'}</Text>
+        <Text style={ui.text}>Decisão do ADM: {j.decidida_em ? horarioFormulario(j.decidida_em) : 'Pendente após encerramento e conferência'}</Text>
+        {!!j.justificativa_rejeicao && <Text style={ui.error}>Pagamento rejeitado: {j.justificativa_rejeicao}</Text>}
         {!!j.data_pagamento && <Text style={ui.text}>Pagamento registrado em: {formatarData(j.data_pagamento)}</Text>}
       </View>
       <Text accessibilityRole="header" style={ui.subtitle}>Ações disponíveis</Text>
       {actions.length === 0 && <Text style={ui.text}>{resource.fresh ? 'Nenhuma alteração disponível para seu perfil no status atual.' : 'Atualize a consulta antes de realizar alterações.'}</Text>}
-      {actions.map((command) => <Button key={command} label={ACAO_LABELS[command]} danger={command === 'cancelar' || command === 'rejeitar'} disabled={pending || resource.loading}
+      {actions.map((command) => <Button key={command} label={ACAO_LABELS[command]} danger={command === 'cancelar' || command.startsWith('rejeitar')} disabled={pending || resource.loading}
         onPress={() => {
           setError(''); setMotivo('');
           if (command === 'corrigir') router.push({ pathname: '/corrigir-jornada', params: { id } });
@@ -146,7 +160,9 @@ export default function JourneyDetails({ id, criada }: { id: string; criada: boo
           {action === 'cancelar' ? <Text style={ui.text}>O cancelamento preserva a jornada e seu histórico, com status Cancelado. Só é permitido antes de qualquer marcação e libera o prestador para outra jornada. Para removê-la da lista depois, use Excluir selecionadas na consulta de jornadas.</Text>
             : action === 'pagar' ? <Text style={ui.text}>Este registro informa a quitação, sem realizar transferência bancária.</Text>
               : <Text style={ui.text}>A ação será registrada no histórico. Marcações operacionais usam o horário atual do servidor.</Text>}
-          {(action === 'cancelar' || action === 'rejeitar') && <Field label="Justificativa *" value={motivo} onChangeText={setMotivo} multiline disabled={pending} />}
+          {(action === 'autorizar-realizacao' || action === 'rejeitar-realizacao') && <Text style={ui.text}>Esta decisão permite ou impede o início da jornada. O pagamento exige outra decisão após o encerramento e a conferência do RH.</Text>}
+          {(action === 'autorizar' || action === 'rejeitar') && <Text style={ui.text}>Esta decisão trata somente do pagamento da jornada já realizada e conferida.</Text>}
+          {(action === 'cancelar' || action === 'rejeitar' || action === 'rejeitar-realizacao') && <Field label="Justificativa *" value={motivo} onChangeText={setMotivo} multiline disabled={pending} />}
           {action === 'pagar' && <Field label="Data do pagamento *" value={dataPagamento} onChangeText={setDataPagamento} placeholder="DD/MM/AAAA" disabled={pending} />}
           {!!error && <Text accessibilityRole="alert" style={ui.error}>{error}</Text>}
           <Button label={pending ? 'Registrando…' : 'Confirmar'} disabled={pending || !resource.fresh} onPress={confirm} />

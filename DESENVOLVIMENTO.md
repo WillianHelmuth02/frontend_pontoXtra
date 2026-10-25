@@ -17,7 +17,7 @@ O backend precisa da migração `node dist/migrate-lixeira.js --apply` (após bu
 ela já foi aplicada na base local desta entrega. Outros ambientes precisam aplicá-la.
 Consulte `back/docs/jornadas-lixeira.md` e a DEC-003 na memória para o contrato e o roteiro.
 
-> Regra de produto revisada em 22/10/2026: a criação deve aguardar aprovação do ADM para realização; após a execução e a conferência do RH, uma segunda aprovação autoriza o pagamento. A [DEC-001](../Memoria_Projeto/decisoes/DEC-001-DUPLA-APROVACAO.md) é a referência vigente. Implementação pendente: as telas e o roteiro abaixo ainda descrevem o fluxo atual com apenas a decisão posterior.
+> Atualização de 24/10/2026: dupla aprovação implementada. A criação aguarda autorização de realização do ADM; entrada inicia a execução; pagamento exige outra decisão após conferência RH. Consulte o [fluxo completo](../back/docs/jornadas-aprovacoes.md) e aplique a migração no ambiente antes de executar os exemplos.
 
 ## Iniciar
 
@@ -77,7 +77,7 @@ Início retorna à página do perfil (Operacional volta à consulta completa). E
 Tentar novamente refaz a consulta. Dados de uma consulta falha não habilitam entrada.
 
 Selecionar uma linha marca somente o círculo. Entrada é exibida apenas ao Operacional
-e habilitada para a seleção EM_ANDAMENTO sem entrada ou saída. RH e Administrador
+e habilitada para a seleção AUTORIZADA_PARA_REALIZACAO, com decisão inicial válida e sem marcações. RH e Administrador
 continuam podendo consultar as jornadas, mas não recebem essa ação operacional.
 O modal de confirmação informa o prestador e explica o uso do horário do servidor.
 A confirmação consulta primeiro o estado atual e envia `PATCH /jornadas/:id/entrada`
@@ -124,7 +124,7 @@ exige justificativa e devolve ao RH para correção e nova conferência. RH regi
 pagamento apenas de jornada Autorizada, informando data. Isso registra quitação,
 sem executar transferência financeira. Jornadas Pagas não oferecem alterações.
 
-A exclusão do CRUD é lógica: o criador pode excluir sua própria jornada EM_ANDAMENTO
+A exclusão começa pelo cancelamento: o criador pode cancelar sua própria jornada anterior à entrada (pendente, autorizada ou rejeitada para realização, além do estado legado EM_ANDAMENTO)
 sem qualquer marcação, e RH mantém o cancelamento administrativo de jornadas alheias.
 Nos detalhes, Cancelar jornada exige motivo e confirmação. A API revalida o ID do
 usuário e a autoria dentro da transação. CANCELADO preserva a linha e auditoria e libera uma nova
@@ -143,7 +143,7 @@ instante e alterações de cada campo; não oferece edição nem exclusão de au
 
 1. Com cadastros ativos existentes, entre como Operacional ou RH e crie uma jornada.
    Confira a data, prestador/função/setor e valor/hora histórico nos detalhes.
-2. Como Operacional, registre entrada, aguarde ao menos um segundo, inicie intervalo,
+2. Confira o status Aguardando autorização de realização e o bloqueio de entrada. Entre como ADM e autorize a realização; confira o aviso ao criador. Como Operacional, registre entrada, aguarde ao menos um segundo, inicie intervalo,
    aguarde, finalize intervalo, aguarde e registre saída. O servidor rejeita eventos
    em sequência temporal inválida, inclusive no mesmo segundo.
 3. Entre como RH, abra Aguardando conferência, confira o histórico e confira a jornada.

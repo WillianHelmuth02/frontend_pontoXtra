@@ -5,6 +5,7 @@ import { ActivityIndicator, FlatList, Modal, Pressable, ScrollView, StyleSheet, 
 import { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/auth';
+import { NotificationLink } from '@/components/notification-link';
 
 export const BLUE = '#005BCC';
 export const PERFIS = { OPERACIONAL: 'Operacional', RH: 'RH', ADMINISTRADOR: 'Administrador' };
@@ -17,7 +18,7 @@ export function JourneyShell({ title, children, busy = false }: PropsWithChildre
   if (!usuario) return <Redirect href="/login" />;
   return <View style={ui.screen}>
     <StatusBar style="light" />
-    <SafeAreaView edges={['top']} style={ui.blue}><View style={ui.header}><Text style={ui.brand}>PontoXtra</Text></View></SafeAreaView>
+    <SafeAreaView edges={['top']} style={ui.blue}><View style={ui.header}><Text style={ui.brand}>PontoXtra</Text><NotificationLink /></View></SafeAreaView>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={ui.content}>
       <View style={ui.greeting}><Text style={ui.greetingText}>Olá, {usuario.nome}</Text><Text style={ui.greetingText}>Perfil: {PERFIS[usuario.perfil]}</Text></View>
       <Text accessibilityRole="header" style={ui.title}>{title}</Text>

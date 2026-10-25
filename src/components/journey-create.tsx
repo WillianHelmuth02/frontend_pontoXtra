@@ -8,7 +8,7 @@ import { carregarCadastrosAtivos } from '@/services/jornadas';
 import { dataParaApi, dinheiro, horarioFormulario, type Jornada } from '@/utils/jornadas';
 import { Button, CadastroPicker, Field, JourneyShell, ResourceState, ui } from './journey-ui';
 
-/** Criação não registra entrada: apenas reserva a jornada EM_ANDAMENTO.
+/** Criação reserva a jornada aguardando autorização de realização do ADM.
  * Enviamos os quatro campos permitidos; valor histórico, autor e status vêm da API.
  * Catálogos vazios não são preenchidos com dados falsos para viabilizar o teste.
  */
@@ -51,7 +51,7 @@ export default function JourneyCreate() {
         <CadastroPicker label="Setor *" items={resource.data.setores} value={setor} onChange={setSetor} disabled={pending || uncertain} />
         <Field label="Data de referência *" value={data} onChangeText={setData} placeholder="DD/MM/AAAA" disabled={pending || uncertain} />
         <View style={ui.card}><Text style={ui.text}>Valor/hora de referência: {funcao ? dinheiro(resource.data.funcoes.find((item) => item.id === funcao)?.valor_hora) : 'Selecione uma função'}</Text>
-          <Text style={ui.text}>O valor vigente da função será preservado na jornada pelo servidor. Criar a jornada não registra entrada.</Text></View>
+          <Text style={ui.text}>O valor vigente da função será preservado na jornada. Após criar, aguarde o ADM autorizar a realização antes de registrar entrada.</Text></View>
       </>}
       {!!error && <Text accessibilityRole="alert" style={ui.error}>{error}</Text>}
       {uncertain && <Text style={ui.error}>A resposta não foi conclusiva. Consulte as jornadas para verificar se a criação foi registrada antes de iniciar outra.</Text>}

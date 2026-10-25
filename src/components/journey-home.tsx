@@ -19,7 +19,7 @@ export default function JourneyHome() {
   if (!usuario) return <Redirect href="/login" />;
   if (usuario.perfil === 'OPERACIONAL') return <Redirect href="/jornadas" />;
   const statuses: StatusJornada[] = usuario.perfil === 'RH'
-    ? ['AGUARDANDO_CONFERENCIA', 'REJEITADO', 'AUTORIZADO'] : ['AGUARDANDO_AUTORIZACAO'];
+    ? ['AGUARDANDO_AUTORIZACAO_REALIZACAO', 'REALIZACAO_REJEITADA', 'AGUARDANDO_CONFERENCIA', 'REJEITADO', 'AUTORIZADO'] : ['AGUARDANDO_AUTORIZACAO_REALIZACAO', 'AGUARDANDO_AUTORIZACAO'];
   return <JourneyShell title="Pendências">
     <ResourceState loading={resource.loading} error={resource.error} onRetry={() => void resource.reload()} />
     {resource.fresh && statuses.map((status) => {

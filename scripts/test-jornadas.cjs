@@ -31,13 +31,13 @@ async function run() {
   }
   assert.throws(() => queryJornadas({ ...FILTROS_VAZIOS, data_inicio: '19/10/2026', data_fim: '18/10/2026' }));
   assert.equal(formatarData('2026-10-18'), '18/10/2026');
-  const open = { status: 'EM_ANDAMENTO', entrada_em: null, saida_em: null };
+  const open = { status: 'AUTORIZADA_PARA_REALIZACAO', entrada_em: null, saida_em: null, realizacao_decidida_por: '9', realizacao_decidida_em: '2026-10-18T09:00:00Z', justificativa_rejeicao_realizacao: null, legado_sem_aprovacao_previa: false };
   assert.equal(podeRegistrarEntrada('OPERACIONAL', open), true);
   assert.equal(podeRegistrarEntrada('RH', open), false);
   assert.equal(podeRegistrarEntrada('ADMINISTRADOR', open), false);
   assert.equal(podeRegistrarEntrada('OPERACIONAL'), false);
   assert.equal(podeRegistrarEntrada('OPERACIONAL', { ...open, entrada_em: '2026-10-18T10:00:00Z' }), false);
-  for (const status of Object.keys(rules.STATUS_LABELS).filter((status) => status !== 'EM_ANDAMENTO')) {
+  for (const status of Object.keys(rules.STATUS_LABELS).filter((status) => status !== 'AUTORIZADA_PARA_REALIZACAO')) {
     assert.equal(podeRegistrarEntrada('OPERACIONAL', { ...open, status }), false);
   }
   // Matriz dos demais eventos: intervalo aberto bloqueia saída; fim do intervalo
@@ -73,13 +73,13 @@ async function run() {
     for (const campo of ['entrada_em', 'inicio_intervalo_em', 'fim_intervalo_em', 'saida_em']) {
       assert.equal(rules.acoesPermitidas(perfil, { ...base, [campo]: '2026-10-18T10:00:00Z' }, base.criada_por).includes('cancelar'), false);
     }
-    for (const status of Object.keys(rules.STATUS_LABELS).filter((s) => s !== 'EM_ANDAMENTO')) {
+    for (const status of Object.keys(rules.STATUS_LABELS).filter((s) => !['EM_ANDAMENTO', 'AGUARDANDO_AUTORIZACAO_REALIZACAO', 'AUTORIZADA_PARA_REALIZACAO', 'REALIZACAO_REJEITADA'].includes(s))) {
       assert.equal(rules.acoesPermitidas(perfil, { ...base, status }, base.criada_por).includes('cancelar'), false);
     }
   }
-  assert.deepEqual(rules.acoesPermitidas('OPERACIONAL', { ...base, entrada_em: '2026-10-18T10:00:00Z' }), ['inicio-intervalo', 'saida']);
-  assert.deepEqual(rules.acoesPermitidas('OPERACIONAL', { ...base, entrada_em: '2026-10-18T10:00:00Z', inicio_intervalo_em: '2026-10-18T12:00:00Z' }), ['fim-intervalo']);
-  assert.deepEqual(rules.acoesPermitidas('OPERACIONAL', { ...base, entrada_em: '2026-10-18T10:00:00Z', inicio_intervalo_em: '2026-10-18T12:00:00Z', fim_intervalo_em: '2026-10-18T13:00:00Z' }), ['saida']);
+  assert.deepEqual(rules.acoesPermitidas('OPERACIONAL', { ...base, status: 'EM_ANDAMENTO', entrada_em: '2026-10-18T10:00:00Z' }), ['inicio-intervalo', 'saida']);
+  assert.deepEqual(rules.acoesPermitidas('OPERACIONAL', { ...base, status: 'EM_ANDAMENTO', entrada_em: '2026-10-18T10:00:00Z', inicio_intervalo_em: '2026-10-18T12:00:00Z' }), ['fim-intervalo']);
+  assert.deepEqual(rules.acoesPermitidas('OPERACIONAL', { ...base, status: 'EM_ANDAMENTO', entrada_em: '2026-10-18T10:00:00Z', inicio_intervalo_em: '2026-10-18T12:00:00Z', fim_intervalo_em: '2026-10-18T13:00:00Z' }), ['saida']);
   assert.deepEqual(rules.acoesPermitidas('RH', { ...base, status: 'AGUARDANDO_CONFERENCIA' }), ['conferir', 'corrigir']);
   assert.deepEqual(rules.acoesPermitidas('ADMINISTRADOR', { ...base, status: 'AGUARDANDO_AUTORIZACAO' }), ['autorizar', 'rejeitar']);
   assert.deepEqual(rules.acoesPermitidas('RH', { ...base, status: 'AUTORIZADO' }), ['pagar']);
@@ -89,6 +89,19 @@ async function run() {
   }
   assert.deepEqual(rules.acoesPermitidas('RH', { ...base, inicio_intervalo_em: '2026-10-18T12:00:00Z' }), []);
   assert.deepEqual(rules.acoesPermitidas('OPERACIONAL', { ...base, inicio_intervalo_em: '2026-10-18T12:00:00Z' }), []);
+  const pending = { ...base, status: 'AGUARDANDO_AUTORIZACAO_REALIZACAO', realizacao_decidida_por: null, realizacao_decidida_em: null };
+  assert.deepEqual(rules.acoesPermitidas('OPERACIONAL', pending, base.criada_por), ['cancelar']);
+  assert.deepEqual(rules.acoesPermitidas('ADMINISTRADOR', pending), ['autorizar-realizacao', 'rejeitar-realizacao']);
+  assert.deepEqual(rules.acoesPermitidas('RH', pending), ['cancelar']);
+  assert.equal(podeRegistrarEntrada('OPERACIONAL', pending), false);
+  assert.equal(podeRegistrarEntrada('OPERACIONAL', { ...open, realizacao_decidida_em: null }), false);
+  for (const status of ['AGUARDANDO_AUTORIZACAO_REALIZACAO', 'AUTORIZADA_PARA_REALIZACAO', 'REALIZACAO_REJEITADA']) {
+    assert.equal(rules.acoesPermitidas('OPERACIONAL', { ...pending, status }, base.criada_por).includes('cancelar'), true);
+  }
+  const legacy = { ...base, status: 'EM_ANDAMENTO', entrada_em: '2026-10-18T10:00:00Z', realizacao_decidida_por: null, realizacao_decidida_em: null, legado_sem_aprovacao_previa: true };
+  assert.deepEqual(rules.acoesPermitidas('OPERACIONAL', legacy), ['inicio-intervalo', 'saida']);
+  assert.deepEqual(rules.acoesPermitidas('OPERACIONAL', { ...legacy, legado_sem_aprovacao_previa: false }), []);
+  assert.equal(podeRegistrarEntrada('OPERACIONAL', { ...legacy, entrada_em: null }), false);
   const correction = { data_jornada: '18/10/2026', valor_hora: '25,50', entrada_em: '18/10/2026 23:00:00', saida_em: '19/10/2026 07:00:00', inicio_intervalo_em: '', fim_intervalo_em: '' };
   const payload = rules.payloadCorrecao(correction);
   assert.equal(payload.entrada_em, '2026-10-19T02:00:00.000Z');

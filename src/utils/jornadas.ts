@@ -4,11 +4,14 @@
 export const STATUS_LABELS = {
   EM_ANDAMENTO: 'Em andamento',
   AGUARDANDO_CONFERENCIA: 'Aguardando conferência',
-  AGUARDANDO_AUTORIZACAO: 'Aguardando autorização',
-  AUTORIZADO: 'Autorizado',
-  REJEITADO: 'Rejeitado',
+  AGUARDANDO_AUTORIZACAO: 'Aguardando aprovação de pagamento',
+  AUTORIZADO: 'Pagamento autorizado',
+  REJEITADO: 'Pagamento rejeitado',
   PAGO: 'Pago',
   CANCELADO: 'Cancelado',
+  AGUARDANDO_AUTORIZACAO_REALIZACAO: 'Aguardando autorização de realização',
+  AUTORIZADA_PARA_REALIZACAO: 'Realização autorizada',
+  REALIZACAO_REJEITADA: 'Realização rejeitada',
 } as const;
 export type StatusJornada = keyof typeof STATUS_LABELS;
 export type CadastroResumo = { id: string; nome: string; ativo?: boolean; valor_hora?: string };
@@ -22,6 +25,10 @@ export type Jornada = {
   setor_id: string;
   data_jornada: string;
   status: StatusJornada;
+  realizacao_decidida_por: string | null;
+  realizacao_decidida_em: string | null;
+  justificativa_rejeicao_realizacao: string | null;
+  legado_sem_aprovacao_previa: boolean;
   entrada_em: string | null;
   saida_em: string | null;
   inicio_intervalo_em: string | null;
@@ -48,8 +55,13 @@ export const FILTROS_VAZIOS: FiltrosJornadas = {
  * sequência dentro de transação; selecionar uma linha nunca registra um evento.
  */
 export function podeRegistrarEntrada(perfil: string, jornada?: Jornada): boolean {
-  return perfil === 'OPERACIONAL' && jornada?.status === 'EM_ANDAMENTO'
-    && jornada.entrada_em === null && jornada.saida_em === null;
+  return perfil === 'OPERACIONAL' && jornada?.status === 'AUTORIZADA_PARA_REALIZACAO'
+    && realizacaoAutorizada(jornada) && !jornada.excluida_em
+    && !jornada.entrada_em && !jornada.inicio_intervalo_em && !jornada.fim_intervalo_em && !jornada.saida_em;
+}
+
+function realizacaoAutorizada(j: Jornada): boolean {
+  return !!j.realizacao_decidida_por && !!j.realizacao_decidida_em && Number.isFinite(Date.parse(j.realizacao_decidida_em)) && !j.justificativa_rejeicao_realizacao;
 }
 
 /** DATE não representa um instante: formatamos sem Date/toLocaleDateString para
@@ -77,11 +89,12 @@ export type HistoricoJornada = {
   dados_novos: Record<string, unknown> | null;
 };
 export type AcaoJornada = 'entrada' | 'inicio-intervalo' | 'fim-intervalo' | 'saida'
-  | 'conferir' | 'autorizar' | 'rejeitar' | 'corrigir' | 'pagar' | 'cancelar';
+  | 'conferir' | 'autorizar' | 'rejeitar' | 'corrigir' | 'pagar' | 'cancelar' | 'autorizar-realizacao' | 'rejeitar-realizacao';
 export const ACAO_LABELS: Record<AcaoJornada, string> = {
   entrada: 'Registrar entrada', 'inicio-intervalo': 'Iniciar intervalo',
   'fim-intervalo': 'Finalizar intervalo', saida: 'Registrar saída', conferir: 'Conferir jornada',
-  autorizar: 'Autorizar', rejeitar: 'Rejeitar', corrigir: 'Corrigir jornada',
+  'autorizar-realizacao': 'Autorizar realização', 'rejeitar-realizacao': 'Rejeitar realização',
+  autorizar: 'Autorizar pagamento', rejeitar: 'Rejeitar pagamento', corrigir: 'Corrigir jornada',
   pagar: 'Registrar pagamento', cancelar: 'Cancelar jornada',
 };
 
@@ -90,14 +103,19 @@ export const ACAO_LABELS: Record<AcaoJornada, string> = {
  */
 export function acoesPermitidas(perfil: string, j: Jornada, usuarioId?: string): AcaoJornada[] {
   if (j.excluida_em) return [];
-  const semMarcacoes = j.status === 'EM_ANDAMENTO'
+  const semMarcacoes = ['EM_ANDAMENTO', 'AGUARDANDO_AUTORIZACAO_REALIZACAO', 'AUTORIZADA_PARA_REALIZACAO', 'REALIZACAO_REJEITADA'].includes(j.status)
     && !j.entrada_em && !j.inicio_intervalo_em && !j.fim_intervalo_em && !j.saida_em;
   const podeExcluir = semMarcacoes && (perfil === 'RH'
     || (['OPERACIONAL', 'ADMINISTRADOR'].includes(perfil) && !!usuarioId && j.criada_por === usuarioId));
-  if (podeExcluir) return perfil === 'OPERACIONAL' ? ['entrada', 'cancelar'] : ['cancelar'];
+  const iniciais: AcaoJornada[] = [];
+  if (perfil === 'ADMINISTRADOR' && j.status === 'AGUARDANDO_AUTORIZACAO_REALIZACAO' && semMarcacoes && !j.realizacao_decidida_por && !j.realizacao_decidida_em && !j.justificativa_rejeicao_realizacao) iniciais.push('autorizar-realizacao', 'rejeitar-realizacao');
+  if (podeRegistrarEntrada(perfil, j)) iniciais.push('entrada');
+  if (podeExcluir) iniciais.push('cancelar');
+  if (iniciais.length || ['AGUARDANDO_AUTORIZACAO_REALIZACAO', 'AUTORIZADA_PARA_REALIZACAO', 'REALIZACAO_REJEITADA'].includes(j.status)) return iniciais;
+  if (!realizacaoAutorizada(j) && !(j.legado_sem_aprovacao_previa && j.entrada_em)) return [];
   if (perfil === 'OPERACIONAL' && j.status === 'EM_ANDAMENTO' && !j.saida_em) {
     if ((!j.entrada_em && (j.inicio_intervalo_em || j.fim_intervalo_em)) || (!j.inicio_intervalo_em && j.fim_intervalo_em)) return [];
-    if (!j.entrada_em) return ['entrada'];
+    if (!j.entrada_em) return [];
     if (j.inicio_intervalo_em && !j.fim_intervalo_em) return ['fim-intervalo'];
     return j.inicio_intervalo_em ? ['saida'] : ['inicio-intervalo', 'saida'];
   }
