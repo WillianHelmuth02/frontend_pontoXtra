@@ -50,3 +50,7 @@ Ao adicionar rotas, iniciar Expo para regenerar tipos locais antes de tsc. Nesta
 Push remoto requer build/configuração apropriados; web e mocks não comprovam recebimento. Nenhum build EAS/publicação foi iniciado nesta entrega. Consultar [guia](../back/docs/notificacoes.md).
 
 Este módulo é Git independente. Compartilhar também ../Memoria_Projeto; ler AGENTS.md antes de alterar regras.
+
+## APK na rede local
+
+Consultar [preparação Android e novo build](ANDROID_REDE_LOCAL.md). Preview/development usam explicitamente o endereço de homologação no eas.json; produção exige URL HTTPS configurada no ambiente de build.

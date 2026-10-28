@@ -45,7 +45,7 @@ export async function api<T>(path: string, options: RequestInit = {}, authentica
     return body as T;
   } catch (error) {
     if (error instanceof ApiError) throw error;
-    throw new Error('Não foi possível acessar a API. Confira se o backend está rodando e tente novamente.');
+    throw new Error(`Não foi possível acessar a API em ${API_URL}. Confira se o backend está ligado e se este aparelho está na mesma rede do servidor.`);
   } finally {
     clearTimeout(timeout);
   }
