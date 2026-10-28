@@ -41,11 +41,11 @@ export function Button({ label, onPress, disabled, secondary, danger, footer }: 
   </Pressable>;
 }
 
-export function Field({ label, value, onChangeText, placeholder, multiline = false, disabled = false }: {
-  label: string; value: string; onChangeText: (value: string) => void; placeholder?: string; multiline?: boolean; disabled?: boolean;
+export function Field({ label, value, onChangeText, placeholder, multiline = false, disabled = false, secureTextEntry = false }: {
+  label: string; value: string; onChangeText: (value: string) => void; placeholder?: string; multiline?: boolean; disabled?: boolean; secureTextEntry?: boolean;
 }) {
   return <View style={ui.field}><Text style={ui.label}>{label}</Text>
-    <TextInput accessibilityLabel={label} value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor="#64748B" autoCapitalize="none" editable={!disabled} multiline={multiline} style={[ui.input, multiline && { minHeight: 90 }]} />
+    <TextInput accessibilityLabel={label} value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor="#64748B" autoCapitalize="none" editable={!disabled} multiline={multiline} secureTextEntry={secureTextEntry} style={[ui.input, multiline && { minHeight: 90 }]} />
   </View>;
 }
 

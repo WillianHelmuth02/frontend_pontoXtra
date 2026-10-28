@@ -31,6 +31,7 @@ export default function JourneyHome() {
       </View>;
     })}
     <Text accessibilityRole="header" style={ui.title}>Acesso rápido</Text>
+    {usuario.perfil === 'ADMINISTRADOR' && <Button label="Gerenciar usuários" secondary onPress={() => router.push('/usuarios')} />}
     {usuario.perfil === 'RH' && <Button label="Criar jornada" onPress={() => router.push('/nova-jornada')} />}
     {usuario.perfil === 'RH' && <>
       <Button label="Gerenciar funções" secondary onPress={() => router.push('/funcoes')} />
