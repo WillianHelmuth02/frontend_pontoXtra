@@ -1,5 +1,15 @@
 # Funções e setores
 
+## Prestadores — entrega de 28/10/2026
+
+No painel RH, **Gerenciar prestadores** abre `/prestadores`. Usa o mesmo componente de funções/setores com busca por nome ou documento, filtros ativos/inativos/todos, cadastro, edição, desativação e reativação com confirmação.
+
+Nome aceita até 150 caracteres e documento até 30, ambos obrigatórios. Documento mantém zeros e pontuação, sem presumir CPF/CNPJ. Telefone (até 25 caracteres) e e-mail (até 180, com formato válido) são opcionais; ao apagar o conteúdo na edição, envia null para limpar o contato. Duplicidade de documento, inclusive entre inativos, é validada pela API e exibida no formulário.
+
+Homologação adicional: criar prestador com documento iniciado por zero; editar os contatos e depois limpar ambos; testar documento duplicado e campos inválidos; buscar por documento; desativar e reativar, conferindo disponibilidade na criação de jornada e preservação das jornadas antigas. Repetir com perfil sem permissão e no Android.
+
+Verificações: 121 testes HTTP de prestadores/funções/setores, scripts test-cadastros/test-api e exportação web aprovados. As limitações globais de tipos/lint descritas abaixo continuam. Sem escrita em banco real ou homologação visual nesta entrega.
+
 No painel do RH (`/session`), abrir **Gerenciar funções** ou **Gerenciar setores**. As rotas são `/funcoes` e `/setores`; outros perfis retornam ao início. As APIs continuam impondo permissão de RH para escrita.
 
 Cada tela oferece busca por nome, filtros Ativos/Inativos/Todos, criação, edição, desativação e reativação. Os cadastros novos são ativos. Desativar preserva os vínculos existentes e impede seleção para novas jornadas. Não há exclusão física. Editar valor/hora de uma função não altera as jornadas existentes.

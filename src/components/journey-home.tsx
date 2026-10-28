@@ -35,6 +35,7 @@ export default function JourneyHome() {
     {usuario.perfil === 'RH' && <>
       <Button label="Gerenciar funções" secondary onPress={() => router.push('/funcoes')} />
       <Button label="Gerenciar setores" secondary onPress={() => router.push('/setores')} />
+      <Button label="Gerenciar prestadores" secondary onPress={() => router.push('/prestadores')} />
     </>}
     <Button label="Consultar todas as jornadas" secondary onPress={() => router.push('/jornadas')} />
     <Button label="Lixeira de jornadas" secondary onPress={() => router.push('/lixeira')} />
