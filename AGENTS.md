@@ -1,5 +1,7 @@
 # Contexto compartilhado do PontoXtra
 
+Revisão de 28/10/2026: /funcoes, /setores, /prestadores, /usuarios e /relatorios implementados. Guias em docs/ e visão consolidada em ../Documentos/VISAO_GERAL_ATUAL.md. Verificar estado atual de tipos/lint em ../Memoria_Projeto/02_ESTADO_ATUAL.md; não afirmar aprovação global apenas porque os scripts e bundles passaram.
+
 Antes de trabalhar neste módulo, leia `../AGENTS.md` e `../Memoria_Projeto/README.md`, especialmente `../Memoria_Projeto/decisoes/DEC-001-DUPLA-APROVACAO.md`.
 
 A regra vigente exige duas aprovações distintas do ADM: realização antes da entrada e pagamento após encerramento e conferência do RH. A documentação não comprova implementação; confira `../Memoria_Projeto/02_ESTADO_ATUAL.md` e o código. Atualize a memória ao concluir mudanças de comportamento.

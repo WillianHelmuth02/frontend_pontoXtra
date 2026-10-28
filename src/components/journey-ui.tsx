@@ -27,6 +27,7 @@ export function JourneyShell({ title, children, busy = false }: PropsWithChildre
     <SafeAreaView edges={['bottom']} style={ui.blue}><View style={ui.footer}>
       <Button label="INÍCIO" disabled={busy} onPress={() => router.replace('/session')} footer />
       <Button label="JORNADAS" disabled={busy} onPress={() => router.replace('/jornadas')} footer />
+      <Button label="RELATÓRIOS" disabled={busy} onPress={() => router.push('/relatorios')} footer />
       <Button label="SAIR" disabled={busy} onPress={() => router.push('/logout')} footer />
     </View></SafeAreaView>
   </View>;

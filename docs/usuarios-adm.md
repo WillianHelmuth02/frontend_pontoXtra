@@ -1,5 +1,7 @@
 # Gestão de usuários pelo ADM
 
+Revisão consolidada de 28/10/2026: esta tela e relatórios estão implementados. [Visão detalhada e fluxo](../../Documentos/VISAO_GERAL_ATUAL.md), [API e cobertura](../../back/docs/api-cobertura.md), [roteiro integrado](../../Documentos/ROTEIRO_HOMOLOGACAO.md). As limitações globais de tipos/lint frontend permanecem registradas no estado atual.
+
 No painel ADM, **Gerenciar usuários** abre `/usuarios`. Demais perfis retornam ao início sem carregar a lista. A API também exige ADMINISTRADOR em todas as rotas de usuários.
 
 Consulta com busca por nome/e-mail e filtros ativos/inativos/todos. Criação com nome (até 120 caracteres), e-mail (até 180), perfil e senha confirmada (15 a 128 caracteres). Senha é mascarada, não é consultada da API nem exibida na lista. Na edição, deixar ambos os campos de senha vazios mantém a senha atual; fechar o formulário limpa esses campos da tela.

@@ -184,6 +184,7 @@ export function JornadasScreen() {
             <View style={[styles.toolbar, { flexWrap: 'wrap', gap: 8 }]}>
               <Pressable accessibilityRole="button" disabled={pending || loading} onPress={() => { setExclusionMode(!exclusionMode); setExclusionIds([]); setSelectedId(null); setNotice(''); }}><Text style={styles.filterButton}>{exclusionMode ? 'Encerrar seleção' : 'Selecionar para excluir'}</Text></Pressable>
               <Pressable accessibilityRole="button" disabled={pending} onPress={() => router.push('/lixeira')}><Text style={styles.filterButton}>Lixeira</Text></Pressable>
+              <Pressable accessibilityRole="button" disabled={pending} onPress={() => router.push('/relatorios')}><Text style={styles.filterButton}>Relatórios</Text></Pressable>
             </View>
             {exclusionMode && <>
               <Text style={styles.hint}>Selecione até 50 jornadas canceladas de sua autoria. RH pode selecionar canceladas de outros usuários. O envio à lixeira preserva os dados até a exclusão definitiva.</Text>

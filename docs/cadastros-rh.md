@@ -1,5 +1,7 @@
 # Funções e setores
 
+Revisão consolidada de 28/10/2026: os três cadastros RH estão implementados; usuários ADM e relatórios também foram entregues. [Estado vigente](../../Memoria_Projeto/02_ESTADO_ATUAL.md), [visão detalhada](../../Documentos/VISAO_GERAL_ATUAL.md). Os registros de testes abaixo distinguem a entrega de cada etapa; homologação manual/Android continua pendente.
+
 ## Prestadores — entrega de 28/10/2026
 
 No painel RH, **Gerenciar prestadores** abre `/prestadores`. Usa o mesmo componente de funções/setores com busca por nome ou documento, filtros ativos/inativos/todos, cadastro, edição, desativação e reativação com confirmação.

@@ -1,56 +1,52 @@
-# Welcome to your Expo app 👋
+﻿# PontoXtra — frontend
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Revisão: 28/10/2026. Expo SDK 58, React Native, React e TypeScript com Expo Router. A aplicação usa Stack em src/app; componentes de negócio ficam fora das rotas. Alvo mobile, com web para desenvolvimento.
 
-## Get started
+## Executar
 
-1. Install dependencies
+Instalar dependências conforme package-lock.json com npm.cmd ci em ambiente preparado. Configurar EXPO_PUBLIC_API_URL em .env.local a partir de .env.example; nunca inserir segredos nessa variável pública. API padrão http://localhost:3000, web na porta 8081.
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```powershell
+npm.cmd run web
+# ou, para desenvolvimento mobile:
+npm.cmd start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Backend deve estar ativo e preparado com as migrações adequadas. No aparelho, localhost aponta ao próprio aparelho; usar endereço alcançável. Para web, configurar CORS da origem. Ver [desenvolvimento](DESENVOLVIMENTO.md).
 
-### Other setup steps
+## Fluxos e telas
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Login/logout e sessão por perfil; jornadas (consulta/criação/detalhes/correção), duas aprovações, eventos, conferência/pagamento; cancelamento/lixeira; avisos internos/push. Cadastros RH: /funcoes, /setores e /prestadores. Contas ADM: /usuarios. Relatórios dos três perfis: /relatorios, com período, prestador, status, paginação e totais completos. A lista de jornadas também possui acesso a Relatórios para o Operacional.
 
-## Learn more
+Quatro cadastros usam desativação, não exclusão física. Jornada possui purga limitada às canceladas sem marcações. [Fluxo completo e cinco CRUDs](../Documentos/VISAO_GERAL_ATUAL.md), [especificação](../Documentos/ESPECIFICACAO_ATUAL.md).
 
-To learn more about developing your project with Expo, look at the following resources:
+## Organização
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- src/app: rotas.
+- src/components: telas e componentes compartilhados.
+- src/services: cliente HTTP, jornadas/relatórios e push.
+- src/utils: contratos, filtros, formatação, validações e matriz de ações.
+- src/contexts: sessão/notificações; src/hooks: carregamento/tema.
+- docs: [cadastros RH](docs/cadastros-rh.md), [usuários ADM](docs/usuarios-adm.md), [relatórios](docs/relatorios.md).
 
-## Join the community
+Token e usuário ficam em memória. Recarregar exige login; 401/expiração encerra sessão. Servidor é a autoridade das permissões. Nenhuma credencial MySQL vai ao aplicativo. Cliente inclui timeout e não repete gravações automaticamente após falha.
 
-Join our community of developers creating universal apps.
+## Verificar
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```powershell
+npx.cmd tsc --noEmit
+npm.cmd run lint
+node scripts/test-api.cjs
+node scripts/test-jornadas.cjs
+node scripts/test-push.cjs
+node scripts/test-cadastros.cjs
+node scripts/test-usuarios.cjs
+node scripts/test-relatorios.cjs
+npx.cmd expo export --platform web
+```
+
+Ao adicionar rotas, iniciar Expo para regenerar tipos locais antes de tsc. Nesta revisão, scripts e exportação web aprovados; tipos globais falham em app-tabs.tsx, app-tabs.web.tsx, jornadas-screen.tsx e use-theme.ts. Lint falha na incompatibilidade ESLint 10/plugin React (contextOrFilename.getFilename). Não apresentar essas verificações como aprovadas. [Roteiro manual/Android](../Documentos/ROTEIRO_HOMOLOGACAO.md).
+
+Push remoto requer build/configuração apropriados; web e mocks não comprovam recebimento. Nenhum build EAS/publicação foi iniciado nesta entrega. Consultar [guia](../back/docs/notificacoes.md).
+
+Este módulo é Git independente. Compartilhar também ../Memoria_Projeto; ler AGENTS.md antes de alterar regras.

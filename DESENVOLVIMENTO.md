@@ -1,5 +1,13 @@
 # Desenvolvimento local Web
 
+## Revisão de 28/10/2026
+
+Frontend usa Expo SDK 58. Cadastros RH /funcoes, /setores e /prestadores; gestão ADM /usuarios; relatório /relatorios para os três perfis, acessível também na lista de jornadas. [Cadastros](docs/cadastros-rh.md), [contas](docs/usuarios-adm.md), [relatórios](docs/relatorios.md), [roteiro completo](../Documentos/ROTEIRO_HOMOLOGACAO.md).
+
+Executar também scripts/test-cadastros.cjs, test-usuarios.cjs e test-relatorios.cjs. Os seis scripts frontend e exportação web passaram nesta revisão. Tipos globais ainda falham nos componentes antigos app-tabs/jornadas-screen/use-theme; lint falha na incompatibilidade ESLint 10/plugin React. Nenhum novo erro foi encontrado nos arquivos de relatório. Iniciar Expo regenera tipos após adicionar rotas.
+
+Não há migração para estas novas telas: todas usam APIs/tabelas existentes. As instruções de lixeira abaixo referem-se à preparação de outros ambientes, não à autorização para recriar o banco local.
+
 ## Lixeira e exclusão definitiva
 
 A ação nos detalhes agora se chama Cancelar jornada. Na lista, Selecionar para excluir

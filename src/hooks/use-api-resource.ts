@@ -12,6 +12,7 @@ export function useApiResource<T>(loader: () => Promise<T>, enabled: boolean) {
   const sequence = useRef(0);
   const run = useCallback(() => {
     const request = ++sequence.current;
+    setLoading(true); setFresh(false); setError('');
     return loader().then((value) => {
       if (request === sequence.current) { setData(value); setFresh(true); }
       return value;
