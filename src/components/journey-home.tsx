@@ -32,6 +32,10 @@ export default function JourneyHome() {
     })}
     <Text accessibilityRole="header" style={ui.title}>Acesso rápido</Text>
     {usuario.perfil === 'RH' && <Button label="Criar jornada" onPress={() => router.push('/nova-jornada')} />}
+    {usuario.perfil === 'RH' && <>
+      <Button label="Gerenciar funções" secondary onPress={() => router.push('/funcoes')} />
+      <Button label="Gerenciar setores" secondary onPress={() => router.push('/setores')} />
+    </>}
     <Button label="Consultar todas as jornadas" secondary onPress={() => router.push('/jornadas')} />
     <Button label="Lixeira de jornadas" secondary onPress={() => router.push('/lixeira')} />
     <Button label="Atualizar pendências" secondary disabled={resource.loading} onPress={() => void resource.reload()} />
