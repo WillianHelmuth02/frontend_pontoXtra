@@ -7,6 +7,7 @@ import { api } from '@/services/api';
 import { carregarDetalhes } from '@/services/jornadas';
 import { ACAO_LABELS, STATUS_LABELS, acoesPermitidas, dataParaApi, dinheiro, formatarData, formatarDuracao, horarioFormulario, type AcaoJornada, type HistoricoJornada, type Jornada } from '@/utils/jornadas';
 import { Button, Field, JourneyShell, ResourceState, ui } from './journey-ui';
+import { AvisoEntrada } from './aviso-entrada';
 
 const HISTORICO_LABELS: Record<string, string> = {
   AUTORIZACAO_REALIZACAO: 'Autorização da realização', REJEICAO_REALIZACAO: 'Rejeição da realização',
@@ -117,6 +118,7 @@ export default function JourneyDetails({ id, criada }: { id: string; criada: boo
         <Text style={ui.text}>Setor: {data.setores.find((item) => item.id === j.setor_id)?.nome ?? `#${j.setor_id}`}</Text>
         <Text style={ui.text}>Data de referência: {formatarData(j.data_jornada)}</Text>
         <Text style={ui.text}>Chegada prevista: {j.chegada_prevista ?? 'Não informada'}</Text>
+        {j.entrada_em && <AvisoEntrada jornada={j} />}
         <Text style={ui.text}>Saída prevista: {j.saida_prevista ?? 'Não informada'}</Text>
         <Text style={ui.label}>{STATUS_LABELS[j.status]}</Text>
       </View>
@@ -159,6 +161,7 @@ export default function JourneyDetails({ id, criada }: { id: string; criada: boo
         <View accessibilityViewIsModal style={[ui.card, { width: '100%', maxWidth: 520, backgroundColor: '#FFFFFF' }]}>
           <Text accessibilityRole="header" style={ui.subtitle}>{action ? ACAO_LABELS[action] : ''}?</Text>
           <Text style={ui.text}>Jornada #{id} · {data?.prestadores.find((item) => item.id === j?.prestador_id)?.nome}</Text>
+          {action === 'entrada' && j && <AvisoEntrada jornada={j} />}
           {action === 'cancelar' ? <Text style={ui.text}>O cancelamento preserva a jornada e seu histórico, com status Cancelado. Só é permitido antes de qualquer marcação e libera o prestador para outra jornada. Para removê-la da lista depois, use Excluir selecionadas na consulta de jornadas.</Text>
             : action === 'pagar' ? <Text style={ui.text}>Este registro informa a quitação, sem realizar transferência bancária.</Text>
               : <Text style={ui.text}>A ação será registrada no histórico. Marcações operacionais usam o horário atual do servidor.</Text>}

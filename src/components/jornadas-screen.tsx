@@ -5,9 +5,11 @@ import { ActivityIndicator, FlatList, Keyboard, Modal, Pressable, StyleSheet, Te
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/auth';
 import { AppHeader, BLUE, JourneyIcon } from '@/components/journey-ui';
+import { AvisoEntrada } from '@/components/aviso-entrada';
 import { JornadasFiltros, JornadasOrdem } from '@/components/jornadas-filtros';
 import { api } from '@/services/api';
 import { carregarJornadas, operarLixeira } from '@/services/jornadas';
+import { avisoPontualidade } from '@/utils/jornadas';
 import { FILTROS_VAZIOS, ORDENS_JORNADAS, STATUS_LABELS, exibirJornadas, formatarData, formatarDuracao, nomePrestador, podeRegistrarEntrada, podeEnviarLixeira, type FiltrosJornadas, type Jornada, type OrdemJornadas } from '@/utils/jornadas';
 
 type Dados = Awaited<ReturnType<typeof carregarJornadas>>;
@@ -119,8 +121,9 @@ export function JornadasScreen() {
     try {
       const current = await api<Jornada>(`/jornadas/${selected.id}`);
       if (!podeRegistrarEntrada(usuario.perfil, current)) throw new Error('Esta jornada não permite mais registrar entrada. A lista será atualizada.');
-      await api<Jornada>(`/jornadas/${selected.id}/entrada`, { method: 'PATCH' });
-      setNotice('Entrada registrada com o horário do servidor.');
+      const registrada = await api<Jornada>(`/jornadas/${selected.id}/entrada`, { method: 'PATCH' });
+      const aviso = avisoPontualidade(registrada, Date.parse(registrada.entrada_em ?? ''));
+      setNotice(['Entrada registrada com o horário do servidor.', aviso].filter(Boolean).join(' '));
     } catch (cause) {
       setNotice(`${cause instanceof Error ? cause.message : 'Não foi possível confirmar a entrada.'} Confira a lista atualizada antes de tentar novamente.`);
     } finally {
@@ -276,6 +279,7 @@ export function JornadasScreen() {
           <Text accessibilityRole="header" style={styles.dialogTitle}>Registrar entrada?</Text>
           <Text style={styles.dialogText}>{selected ? nomesPrestadores.get(selected.prestador_id) : ''}</Text>
           <Text style={styles.dialogText}>O horário atual do servidor será registrado nesta jornada.</Text>
+          {confirmation && selected && <AvisoEntrada jornada={selected} />}
           <View style={styles.actions}>
             <Pressable accessibilityRole="button" onPress={() => setConfirmation(false)} style={styles.secondary}><Text style={styles.filterButton}>Cancelar</Text></Pressable>
             <Pressable accessibilityRole="button" disabled={!canEnter} onPress={registerEntry} style={styles.primary}><Text style={styles.primaryText}>Confirmar entrada</Text></Pressable>

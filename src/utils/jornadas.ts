@@ -196,6 +196,16 @@ export function dinheiro(valor: string | null | undefined): string {
 /** Os formulários de correção usam Brasília UTC-03, explicitado na interface.
  * Somamos/subtraímos um offset fixo, sem depender do fuso do navegador de teste.
  */
+export function avisoPontualidade(jornada: Pick<Jornada, 'data_jornada' | 'chegada_prevista'>, momento: number): string {
+  if (!jornada.chegada_prevista) return '';
+  const horario = jornada.chegada_prevista.slice(0, 5);
+  const prevista = Date.parse(`${jornada.data_jornada}T${horario}:00-03:00`);
+  const diferenca = Math.trunc((momento - prevista) / 60000);
+  if (!Number.isFinite(diferenca) || (diferenca > -15 && diferenca < 5)) return '';
+  const desvio = diferenca < 0 ? 'Chegada antecipada' : 'Atraso na chegada';
+  return `${desvio} de ${formatarDuracao(Math.abs(diferenca))}. Entrada prevista para ${formatarData(jornada.data_jornada)} às ${horario}.`;
+}
+
 export function horarioFormulario(value: string | null): string {
   if (!value) return '';
   const iso = new Date(new Date(value).getTime() - 3 * 3600000).toISOString();

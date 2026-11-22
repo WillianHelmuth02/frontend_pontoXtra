@@ -5,6 +5,13 @@ const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 const ts = require('typescript');
+const { avisoPontualidade } = load('src/utils/jornadas.ts');
+const agenda = { data_jornada: '2026-11-22', chegada_prevista: '00:10:00' };
+assert.match(avisoPontualidade(agenda, Date.parse('2026-11-21T23:55:00-03:00')), /antecipada.*15min/);
+assert.equal(avisoPontualidade(agenda, Date.parse('2026-11-21T23:56:00-03:00')), '');
+assert.equal(avisoPontualidade(agenda, Date.parse('2026-11-22T00:14:59-03:00')), '');
+assert.match(avisoPontualidade(agenda, Date.parse('2026-11-22T03:15:00Z')), /Atraso.*05min/);
+assert.equal(avisoPontualidade({ ...agenda, chegada_prevista: null }, Date.now()), '');
 function load(file, dependencies = {}) {
   const source = ts.transpileModule(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
