@@ -10,17 +10,30 @@ import { NotificationLink } from '@/components/notification-link';
 export const BLUE = '#005BCC';
 export const PERFIS = { OPERACIONAL: 'Operacional', RH: 'RH', ADMINISTRADOR: 'Administrador' };
 
-/** Moldura das novas telas, seguindo o protótipo: marca, saudação e navegação
- * por perfil. A lógica de negócio fica nos serviços e no backend, fora daqui.
- */
+export function AppHeader({ nome, perfil }: { nome: string; perfil: keyof typeof PERFIS }) {
+  return (
+    <SafeAreaView edges={['top', 'left', 'right']} style={ui.blue}>
+      <View style={ui.header}>
+        <View style={ui.headerIdentity}>
+          <Text style={ui.brand}>PontoXtra</Text>
+          <View style={ui.userInfo}>
+            <Text accessibilityLabel={nome} numberOfLines={2} style={ui.userName}>{nome}</Text>
+            <Text style={ui.userProfile}>{PERFIS[perfil]}</Text>
+          </View>
+        </View>
+        <NotificationLink />
+      </View>
+    </SafeAreaView>
+  );
+}
+
 export function JourneyShell({ title, children, busy = false }: PropsWithChildren<{ title: string; busy?: boolean }>) {
   const { usuario } = useAuth();
   if (!usuario) return <Redirect href="/login" />;
   return <View style={ui.screen}>
     <StatusBar style="light" />
-    <SafeAreaView edges={['top']} style={ui.blue}><View style={ui.header}><Text style={ui.brand}>PontoXtra</Text><NotificationLink /></View></SafeAreaView>
+    <AppHeader nome={usuario.nome} perfil={usuario.perfil} />
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={ui.content}>
-      <View style={ui.greeting}><Text style={ui.greetingText}>Olá, {usuario.nome}</Text><Text style={ui.greetingText}>Perfil: {PERFIS[usuario.perfil]}</Text></View>
       <Text accessibilityRole="header" style={ui.title}>{title}</Text>
       {children}
     </ScrollView>
@@ -87,11 +100,13 @@ export function CadastroPicker({ label, items, value, onChange, disabled }: {
  */
 export const ui = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#F5F5FF' }, blue: { backgroundColor: BLUE },
-  header: { minHeight: 90, alignItems: 'center', justifyContent: 'center' },
-  brand: { fontSize: 42, color: '#20C12D', fontWeight: '800' },
+  header: { width: '100%', maxWidth: 680, alignSelf: 'center', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', columnGap: 12, paddingHorizontal: 16, paddingVertical: 10 },
+  headerIdentity: { flexBasis: 232, flexGrow: 1, flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  brand: { fontSize: 26, color: '#54EF60', fontWeight: '800', letterSpacing: -0.6, flexShrink: 1 },
+  userInfo: { flex: 1, minWidth: 0 },
+  userName: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
+  userProfile: { color: '#E5EDFF', fontSize: 12 },
   content: { width: '100%', maxWidth: 680, alignSelf: 'center', padding: 24, gap: 14, flexGrow: 1 },
-  greeting: { alignSelf: 'center', backgroundColor: BLUE, borderRadius: 40, paddingVertical: 8, paddingHorizontal: 24 },
-  greetingText: { textAlign: 'center', color: '#54EF60', fontSize: 18 },
   title: { fontSize: 28, color: BLUE, fontWeight: '700', marginVertical: 8 },
   subtitle: { fontSize: 20, color: BLUE, fontWeight: '700' },
   text: { color: '#294B75', fontSize: 15, lineHeight: 23 },

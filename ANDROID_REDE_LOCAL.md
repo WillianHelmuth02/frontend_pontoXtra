@@ -1,11 +1,11 @@
 # Android — API na rede local
 
-Configuração de homologação preparada em 28/10/2026. IP observado: **192.168.0.119**, porta **3000**. O APK anterior foi gerado e instalado, segundo o usuário, mas não conectou à API.
+Configuração de homologação atualizada em 16/11/2026. IP observado: **192.168.3.152**, porta **3000**. O APK anterior foi gerado e instalado, segundo o usuário, mas não conectou à API.
 
 ## O que foi corrigido
 
-- `eas.json`: development/preview recebem explicitamente `EXPO_PUBLIC_API_URL=http://192.168.0.119:3000` e `PONTOXTRA_ALLOW_HTTP=true`, inclusive no build remoto.
-- `.env.local`: mesma URL para desenvolvimento local; arquivo ignorado pelo Git.
+- `eas.json`: development/preview recebem explicitamente `EXPO_PUBLIC_API_URL=http://192.168.3.152:3000` e `PONTOXTRA_ALLOW_HTTP=true`, inclusive no build remoto.
+- `.env.local`: `http://localhost:3000` para uso web no mesmo PC; arquivo ignorado pelo Git.
 - `app.config.js`: impede build com URL ausente ou loopback e exige HTTPS no perfil production. Não usar localhost no aparelho.
 - `plugins/with-api-network.js`: permite HTTP no Android somente quando explicitamente habilitado para homologação; produção mantém HTTP desativado. A permissão vale para tráfego HTTP do aplicativo, não apenas para um host; usar somente em rede de teste confiável.
 - Backend: bind explícito `HOST`, padrão `0.0.0.0`, porta `PORT`, padrão 3000. Não é necessário expor o MySQL ao Android.
@@ -15,9 +15,9 @@ Nenhuma regra de jornada, dado de negócio, senha ou credencial Firebase é alte
 
 ## Etapas 1 a 4
 
-1. **IP:** executar `ipconfig`; conferir o IPv4 Wi-Fi. Se mudar, atualizar `eas.json` (development/preview) e `.env.local` antes do próximo build.
+1. **IP:** executar `ipconfig`; conferir o IPv4 Wi-Fi. Se mudar, atualizar `eas.json` (development/preview) antes do próximo build. O web local continua usando localhost.
 2. **Backend/banco:** no diretório `back`, executar `npm.cmd run db:check` (SELECT 1) e `npm.cmd run start:dev`. Banco existente deve ser preservado; não executar o SQL que recria o banco. Para homologação desta conexão, manter worker push desabilitado.
-3. **Android:** no navegador do tablet e do smartphone, abrir **http://192.168.0.119:3000/**. A rota pública atual responde `Hello World!`. Isso testa rede/API, não login ou gravação. Ambos devem usar o mesmo Wi-Fi, sem isolamento entre clientes.
+3. **Android:** no navegador do tablet e do smartphone, abrir **http://192.168.3.152:3000/**. A rota pública atual responde `Hello World!`. Isso testa rede/API, não login ou gravação. Ambos devem usar o mesmo Wi-Fi, sem isolamento entre clientes.
 4. **URL:** development/preview já estão configurados para o IP acima. Gerar e instalar NOVO APK: mudar os arquivos no PC não atualiza o APK anterior.
 
 Se a rota abrir no PC e falhar nos aparelhos: conferir firewall do Windows, endereço e isolamento Wi-Fi. Uma eventual regra de entrada deve limitar-se a TCP 3000, rede privada e sub-rede local. Não desativar o firewall nem liberar MySQL para os aparelhos. Rede pública deve ser tratada como tal; não alterar a classificação automaticamente.

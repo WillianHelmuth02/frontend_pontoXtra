@@ -116,6 +116,8 @@ export default function JourneyDetails({ id, criada }: { id: string; criada: boo
         <Text style={ui.text}>Função: {data.funcoes.find((item) => item.id === j.funcao_id)?.nome ?? `#${j.funcao_id}`}</Text>
         <Text style={ui.text}>Setor: {data.setores.find((item) => item.id === j.setor_id)?.nome ?? `#${j.setor_id}`}</Text>
         <Text style={ui.text}>Data de referência: {formatarData(j.data_jornada)}</Text>
+        <Text style={ui.text}>Chegada prevista: {j.chegada_prevista ?? 'Não informada'}</Text>
+        <Text style={ui.text}>Saída prevista: {j.saida_prevista ?? 'Não informada'}</Text>
         <Text style={ui.label}>{STATUS_LABELS[j.status]}</Text>
       </View>
       <View style={ui.card}>

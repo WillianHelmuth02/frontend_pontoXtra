@@ -4,13 +4,11 @@ import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/auth';
-import { NotificationLink } from '@/components/notification-link';
+import { AppHeader, BLUE } from '@/components/journey-ui';
 import { api } from '@/services/api';
 import { carregarJornadas, operarLixeira } from '@/services/jornadas';
 import { FILTROS_VAZIOS, STATUS_LABELS, formatarData, podeRegistrarEntrada, podeEnviarLixeira, queryJornadas, type FiltrosJornadas, type Jornada } from '@/utils/jornadas';
 
-const BLUE = '#005BCC';
-const PROFILE_LABELS = { OPERACIONAL: 'Operacional', RH: 'RH', ADMINISTRADOR: 'Administrador' };
 type Dados = Awaited<ReturnType<typeof carregarJornadas>>;
 const DADOS_VAZIOS: Dados = { jornadas: [], prestadores: [], funcoes: [], setores: [] };
 
@@ -161,10 +159,7 @@ export function JornadasScreen() {
   return (
     <View style={styles.screen}>
       <StatusBar style="light" />
-      {/* A barra do sistema pertence ao aparelho: não simulamos relógio ou sinal. */}
-      <SafeAreaView edges={['top']} style={styles.topSafe}>
-        <View style={styles.header}><Text accessibilityRole="header" style={styles.brand}>PontoXtra</Text><NotificationLink /></View>
-      </SafeAreaView>
+      <AppHeader nome={usuario.nome} perfil={usuario.perfil} />
       <View style={styles.body}>
         <FlatList
           ref={list}
@@ -175,10 +170,6 @@ export function JornadasScreen() {
           refreshing={loading}
           onRefresh={reload}
           ListHeaderComponent={<>
-            <View style={styles.greeting}>
-              <Text style={styles.greetingText}>Olá, {usuario.nome}</Text>
-              <Text style={styles.greetingText}>Perfil: {PROFILE_LABELS[usuario.perfil]}</Text>
-            </View>
             <Text accessibilityRole="header" style={styles.title}>Jornadas</Text>
             {usuario.perfil !== 'ADMINISTRADOR' && <Pressable accessibilityRole="button" disabled={pending} onPress={() => router.push('/nova-jornada')} style={styles.newButton}><Text style={styles.primaryText}>+ Nova jornada</Text></Pressable>}
             <View style={[styles.toolbar, { flexWrap: 'wrap', gap: 8 }]}>
@@ -297,13 +288,8 @@ export function JornadasScreen() {
  */
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#F5F5FF' },
-  topSafe: { backgroundColor: BLUE },
-  header: { minHeight: 90, alignItems: 'center', justifyContent: 'center', padding: 12 },
-  brand: { color: '#20C12D', fontSize: 42, fontWeight: '800', letterSpacing: -1.2 },
   body: { flex: 1, width: '100%', maxWidth: 680, alignSelf: 'center' },
   listContent: { paddingHorizontal: 25, paddingBottom: 12, flexGrow: 1 },
-  greeting: { marginTop: 17, alignSelf: 'center', backgroundColor: BLUE, borderRadius: 40, paddingHorizontal: 26, paddingVertical: 8, maxWidth: '100%' },
-  greetingText: { textAlign: 'center', color: '#54EF60', fontSize: 20, lineHeight: 25 },
   title: { color: BLUE, fontSize: 32, textAlign: 'center', marginTop: 16, marginBottom: 16 },
   toolbar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   count: { color: '#52637C', fontSize: 13 },

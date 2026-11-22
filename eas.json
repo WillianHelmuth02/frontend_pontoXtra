@@ -8,7 +8,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://192.168.0.119:3000",
+        "EXPO_PUBLIC_API_URL": "http://192.168.3.152:3000",
         "PONTOXTRA_ALLOW_HTTP": "true"
       }
     },
@@ -18,7 +18,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://192.168.0.119:3000",
+        "EXPO_PUBLIC_API_URL": "http://192.168.3.152:3000",
         "PONTOXTRA_ALLOW_HTTP": "true"
       }
     },

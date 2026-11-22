@@ -24,6 +24,8 @@ export type Jornada = {
   funcao_id: string;
   setor_id: string;
   data_jornada: string;
+  chegada_prevista: string | null;
+  saida_prevista: string | null;
   status: StatusJornada;
   realizacao_decidida_por: string | null;
   realizacao_decidida_em: string | null;

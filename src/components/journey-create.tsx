@@ -6,10 +6,11 @@ import { useApiResource } from '@/hooks/use-api-resource';
 import { api, ApiError } from '@/services/api';
 import { carregarCadastrosAtivos } from '@/services/jornadas';
 import { dataParaApi, dinheiro, horarioFormulario, type Jornada } from '@/utils/jornadas';
-import { Button, CadastroPicker, Field, JourneyShell, ResourceState, ui } from './journey-ui';
+import { Button, CadastroPicker, JourneyShell, ResourceState, ui } from './journey-ui';
+import { SchedulePicker } from './journey-schedule-picker';
 
 /** Criação reserva a jornada aguardando autorização de realização do ADM.
- * Enviamos os quatro campos permitidos; valor histórico, autor e status vêm da API.
+ * Valor histórico, autor e status vêm da API.
  * Catálogos vazios não são preenchidos com dados falsos para viabilizar o teste.
  */
 export default function JourneyCreate() {
@@ -21,6 +22,8 @@ export default function JourneyCreate() {
   const [funcao, setFuncao] = useState('');
   const [setor, setSetor] = useState('');
   const [data, setData] = useState(() => horarioFormulario(new Date().toISOString()).slice(0, 10));
+  const [chegada, setChegada] = useState('');
+  const [saida, setSaida] = useState('');
   const [pending, setPending] = useState(false);
   const [uncertain, setUncertain] = useState(false);
   const [error, setError] = useState('');
@@ -28,10 +31,10 @@ export default function JourneyCreate() {
   async function save() {
     if (saving.current || !allowed || !resource.fresh || uncertain) return;
     try {
-      if (!prestador || !funcao || !setor || !data.trim()) throw new Error('Selecione prestador, função, setor e informe a data.');
+      if (!prestador || !funcao || !setor || !chegada || !saida) throw new Error('Selecione prestador, função, setor e os horários previstos de chegada e saída.');
       const data_jornada = dataParaApi(data);
       saving.current = true; setPending(true); setError('');
-      const jornada = await api<Jornada>('/jornadas', { method: 'POST', body: JSON.stringify({ prestador_id: prestador, funcao_id: funcao, setor_id: setor, data_jornada }) });
+      const jornada = await api<Jornada>('/jornadas', { method: 'POST', body: JSON.stringify({ prestador_id: prestador, funcao_id: funcao, setor_id: setor, data_jornada, chegada_prevista: chegada, saida_prevista: saida }) });
       router.replace({ pathname: '/jornada', params: { id: jornada.id, criada: '1' } });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Não foi possível criar a jornada.');
@@ -49,7 +52,9 @@ export default function JourneyCreate() {
         <CadastroPicker label="Prestador *" items={resource.data.prestadores} value={prestador} onChange={setPrestador} disabled={pending || uncertain} />
         <CadastroPicker label="Função *" items={resource.data.funcoes} value={funcao} onChange={setFuncao} disabled={pending || uncertain} />
         <CadastroPicker label="Setor *" items={resource.data.setores} value={setor} onChange={setSetor} disabled={pending || uncertain} />
-        <Field label="Data de referência *" value={data} onChangeText={setData} placeholder="DD/MM/AAAA" disabled={pending || uncertain} />
+        <SchedulePicker label="Data da jornada *" mode="date" value={data} onChange={setData} disabled={pending || uncertain} />
+        <SchedulePicker label="Chegada prevista *" mode="time" value={chegada} onChange={setChegada} disabled={pending || uncertain} />
+        <SchedulePicker label="Saída prevista *" mode="time" value={saida} onChange={setSaida} disabled={pending || uncertain} />
         <View style={ui.card}><Text style={ui.text}>Valor/hora de referência: {funcao ? dinheiro(resource.data.funcoes.find((item) => item.id === funcao)?.valor_hora) : 'Selecione uma função'}</Text>
           <Text style={ui.text}>O valor vigente da função será preservado na jornada. Após criar, aguarde o ADM autorizar a realização antes de registrar entrada.</Text></View>
       </>}
