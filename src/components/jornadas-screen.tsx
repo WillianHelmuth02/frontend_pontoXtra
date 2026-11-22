@@ -1,13 +1,14 @@
 import { Redirect, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, Keyboard, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/auth';
-import { AppHeader, BLUE } from '@/components/journey-ui';
+import { AppHeader, BLUE, JourneyIcon } from '@/components/journey-ui';
+import { JornadasFiltros, JornadasOrdem } from '@/components/jornadas-filtros';
 import { api } from '@/services/api';
 import { carregarJornadas, operarLixeira } from '@/services/jornadas';
-import { FILTROS_VAZIOS, STATUS_LABELS, formatarData, podeRegistrarEntrada, podeEnviarLixeira, queryJornadas, type FiltrosJornadas, type Jornada } from '@/utils/jornadas';
+import { FILTROS_VAZIOS, ORDENS_JORNADAS, STATUS_LABELS, exibirJornadas, formatarData, formatarDuracao, nomePrestador, podeRegistrarEntrada, podeEnviarLixeira, type FiltrosJornadas, type Jornada, type OrdemJornadas } from '@/utils/jornadas';
 
 type Dados = Awaited<ReturnType<typeof carregarJornadas>>;
 const DADOS_VAZIOS: Dados = { jornadas: [], prestadores: [], funcoes: [], setores: [] };
@@ -33,9 +34,10 @@ export function JornadasScreen() {
   const [filtros, setFiltros] = useState<FiltrosJornadas>(() => ({ ...FILTROS_VAZIOS,
     status: typeof params.status === 'string' && Object.hasOwn(STATUS_LABELS, params.status) ? params.status as FiltrosJornadas['status'] : '',
   }));
-  const [rascunho, setRascunho] = useState<FiltrosJornadas>(FILTROS_VAZIOS);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [prestadorSearch, setPrestadorSearch] = useState('');
+  const [orderOpen, setOrderOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [order, setOrder] = useState<OrdemJornadas>('recentes');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [exclusionMode, setExclusionMode] = useState(false);
   const [exclusionIds, setExclusionIds] = useState<string[]>([]);
@@ -45,13 +47,11 @@ export function JornadasScreen() {
   const [pending, setPending] = useState(false);
   const [confirmation, setConfirmation] = useState(false);
   const [error, setError] = useState('');
-  const [filterError, setFilterError] = useState('');
   const [notice, setNotice] = useState('');
   // A geração invalida respostas antigas ao trocar filtros ou desmontar a tela.
   // A trava de escrita é síncrona, evitando dois PATCHs antes do próximo render.
   const generation = useRef(0);
   const writing = useRef(false);
-  const list = useRef<FlatList<Jornada>>(null);
 
   const load = useCallback((next: FiltrosJornadas) => {
     const current = ++generation.current;
@@ -87,14 +87,22 @@ export function JornadasScreen() {
     return () => { requests.current++; };
   }, [usuario, filtros, load]));
 
-  const selected = dados.jornadas.find((jornada) => jornada.id === selectedId);
+  const nomesPrestadores = useMemo(() => new Map(dados.prestadores.map((item) => [item.id, item.nome])), [dados.prestadores]);
+  const visible = useMemo(() => exibirJornadas(dados.jornadas, nomesPrestadores, search, order),
+    [dados.jornadas, nomesPrestadores, search, order]);
+  const selected = visible.find((jornada) => jornada.id === selectedId);
   const canEnter = !exclusionMode && fresh && !loading && !pending && !!usuario && podeRegistrarEntrada(usuario.perfil, selected);
   const canExclude = fresh && !loading && !pending && !!usuario && exclusionIds.length > 0 && exclusionIds.length <= 50
-    && exclusionIds.every((id) => dados.jornadas.some((jornada) => jornada.id === id && podeEnviarLixeira(usuario.perfil, jornada, usuario.id)));
-  const nomesPrestadores = new Map(dados.prestadores.map((item) => [item.id, item.nome]));
+    && exclusionIds.every((id) => visible.some((jornada) => jornada.id === id && podeEnviarLixeira(usuario.perfil, jornada, usuario.id)));
   const nomesFuncoes = new Map(dados.funcoes.map((item) => [item.id, item.nome]));
   const nomesSetores = new Map(dados.setores.map((item) => [item.id, item.nome]));
   const activeFilters = Object.values(filtros).filter(Boolean).length;
+
+  function updateSearch(value: string) {
+    setSearch(value);
+    setSelectedId(null);
+    setExclusionIds([]);
+  }
 
   /** Consulta novamente antes da escrita para reduzir ações sobre estado antigo.
    * O relógio e a validação transacional continuam exclusivamente no backend.
@@ -126,18 +134,14 @@ export function JornadasScreen() {
   }
 
   function applyFilters(next: FiltrosJornadas) {
-    try {
-      queryJornadas(next); // Valida calendário e intervalo antes de fechar o formulário.
-      setLoading(true);
-      setFresh(false);
-      setError('');
-      setFiltros({ ...next });
-      setSelectedId(null);
-      setExclusionIds([]);
-      setNotice('');
-      setFilterOpen(false);
-      setFilterError('');
-    } catch (cause) { setFilterError(cause instanceof Error ? cause.message : 'Filtros inválidos.'); }
+    setLoading(true);
+    setFresh(false);
+    setError('');
+    setFiltros({ ...next });
+    setSelectedId(null);
+    setExclusionIds([]);
+    setNotice('');
+    setFilterOpen(false);
   }
 
   async function excludeSelected() {
@@ -162,43 +166,70 @@ export function JornadasScreen() {
       <AppHeader nome={usuario.nome} perfil={usuario.perfil} />
       <View style={styles.body}>
         <FlatList
-          ref={list}
-          data={fresh ? dados.jornadas : []}
+          data={fresh ? visible : []}
           keyExtractor={(item) => item.id}
           extraData={{ selectedId, exclusionMode, exclusionIds }}
           contentContainerStyle={styles.listContent}
           refreshing={loading}
           onRefresh={reload}
+          keyboardShouldPersistTaps="handled"
           ListHeaderComponent={<>
             <Text accessibilityRole="header" style={styles.title}>Jornadas</Text>
             {usuario.perfil !== 'ADMINISTRADOR' && <Pressable accessibilityRole="button" disabled={pending} onPress={() => router.push('/nova-jornada')} style={styles.newButton}><Text style={styles.primaryText}>+ Nova jornada</Text></Pressable>}
-            <View style={[styles.toolbar, { flexWrap: 'wrap', gap: 8 }]}>
+            <View style={[styles.toolbar, styles.shortcuts]}>
               <Pressable accessibilityRole="button" disabled={pending || loading} onPress={() => { setExclusionMode(!exclusionMode); setExclusionIds([]); setSelectedId(null); setNotice(''); }}><Text style={styles.filterButton}>{exclusionMode ? 'Encerrar seleção' : 'Selecionar para excluir'}</Text></Pressable>
-              <Pressable accessibilityRole="button" disabled={pending} onPress={() => router.push('/lixeira')}><Text style={styles.filterButton}>Lixeira</Text></Pressable>
-              <Pressable accessibilityRole="button" disabled={pending} onPress={() => router.push('/relatorios')}><Text style={styles.filterButton}>Relatórios</Text></Pressable>
+              <View style={styles.quickLinks}>
+                <Pressable accessibilityRole="button" disabled={pending} onPress={() => router.push('/lixeira')}
+                  style={({ pressed }) => [styles.filterTrigger, (pressed || pending) && styles.disabled]}>
+                  <JourneyIcon icon="trash" /><Text style={styles.filterButton}>Lixeira</Text>
+                </Pressable>
+                <Pressable accessibilityRole="button" disabled={pending} onPress={() => router.push('/relatorios')}
+                  style={({ pressed }) => [styles.filterTrigger, (pressed || pending) && styles.disabled]}>
+                  <JourneyIcon icon="reports" /><Text style={styles.filterButton}>Relatórios</Text>
+                </Pressable>
+              </View>
             </View>
             {exclusionMode && <>
               <Text style={styles.hint}>Selecione até 50 jornadas canceladas de sua autoria. RH pode selecionar canceladas de outros usuários. O envio à lixeira preserva os dados até a exclusão definitiva.</Text>
               <Pressable accessibilityRole="button" accessibilityState={{ disabled: !canExclude }} disabled={!canExclude} onPress={() => setExclusionConfirm(true)} style={[styles.newButton, !canExclude && styles.disabled]}><Text style={styles.primaryText}>Excluir selecionadas ({exclusionIds.length})</Text></Pressable>
             </>}
-            <View style={styles.toolbar}>
-              <Text style={styles.count}>{loading ? 'Carregando…' : fresh ? `${dados.jornadas.length} jornada(s)` : 'Consulta indisponível'}</Text>
-              <Pressable accessibilityRole="button" disabled={loading || pending} onPress={() => { setRascunho({ ...filtros }); setFilterError(''); setPrestadorSearch(''); setFilterOpen(true); }}>
-                <Text style={styles.filterButton}>Filtros{activeFilters ? ` (${activeFilters})` : ''}</Text>
-              </Pressable>
+            <View style={styles.searchField}>
+              <JourneyIcon icon="search" />
+              <TextInput accessibilityLabel="Buscar pelo nome do prestador" placeholder="Buscar pelo nome do prestador"
+                placeholderTextColor="#52637C" autoCorrect={false} returnKeyType="search" editable={!pending}
+                value={search} onChangeText={updateSearch} style={styles.searchInput} />
+              {!!search && <Pressable accessibilityRole="button" accessibilityLabel="Limpar busca" disabled={pending}
+                onPress={() => updateSearch('')} style={styles.clearSearch}><JourneyIcon icon="clear" /></Pressable>}
+            </View>
+            <View style={[styles.toolbar, styles.shortcuts]}>
+              <Text accessibilityLiveRegion="polite" style={styles.count}>{loading ? 'Carregando…' : fresh ? `${visible.length} jornada(s)` : 'Consulta indisponível'}</Text>
+              <View style={styles.quickLinks}>
+                <Pressable accessibilityRole="button" accessibilityLabel={`Ordenar: ${ORDENS_JORNADAS[order]}`}
+                  disabled={pending} onPress={() => { Keyboard.dismiss(); setOrderOpen(true); }}
+                  style={({ pressed }) => [styles.filterTrigger, order !== 'recentes' && styles.filterTriggerActive, (pressed || pending) && styles.disabled]}>
+                  <JourneyIcon icon="sort" /><Text style={styles.filterButton}>{ORDENS_JORNADAS[order]}</Text>
+                </Pressable>
+                <Pressable accessibilityRole="button" accessibilityState={{ disabled: loading || pending }}
+                  disabled={loading || pending} onPress={() => { Keyboard.dismiss(); setFilterOpen(true); }}
+                  style={({ pressed }) => [styles.filterTrigger, activeFilters > 0 && styles.filterTriggerActive, (pressed || loading || pending) && styles.disabled]}>
+                  <JourneyIcon icon="filters" />
+                  <Text style={styles.filterButton}>Filtros{activeFilters ? ` (${activeFilters})` : ''}</Text>
+                </Pressable>
+              </View>
             </View>
             {!!notice && <Text accessibilityLiveRegion="polite" style={styles.message}>{notice}</Text>}
             {!!error && <View style={styles.errorBox}><Text accessibilityRole="alert" style={styles.error}>{error}</Text>
               <Pressable accessibilityRole="button" onPress={reload}><Text style={styles.filterButton}>Tentar novamente</Text></Pressable>
             </View>}
           </>}
-          ListEmptyComponent={loading ? <ActivityIndicator color={BLUE} style={styles.empty} /> : !error ? <Text style={styles.empty}>Nenhuma jornada encontrada{activeFilters ? ' para os filtros informados' : ''}.</Text> : null}
+          ListEmptyComponent={loading ? <ActivityIndicator color={BLUE} style={styles.empty} /> : !error ? <Text style={styles.empty}>Nenhuma jornada encontrada{search.trim() || activeFilters ? ' com a busca e os filtros atuais' : ''}.</Text> : undefined}
           renderItem={({ item }) => {
             const checked = exclusionMode ? exclusionIds.includes(item.id) : item.id === selectedId;
             const selectionDisabled = pending || loading || (exclusionMode && (!podeEnviarLixeira(usuario.perfil, item, usuario.id) || (!checked && exclusionIds.length >= 50)));
-            const nome = nomesPrestadores.get(item.prestador_id) ?? `Prestador #${item.prestador_id}`;
+            const nome = nomePrestador(item.prestador_id, nomesPrestadores);
+            const duracao = item.minutos_trabalhados == null ? '' : formatarDuracao(item.minutos_trabalhados);
             return <View style={[styles.row, checked && styles.rowSelected]}>
-              <Pressable accessibilityRole={exclusionMode ? 'checkbox' : 'radio'} accessibilityState={{ checked, disabled: selectionDisabled }} accessibilityLabel={`${nome}, ${formatarData(item.data_jornada)}, ${STATUS_LABELS[item.status]}`} disabled={selectionDisabled} onPress={() => {
+              <Pressable accessibilityRole={exclusionMode ? 'checkbox' : 'radio'} accessibilityState={{ checked, disabled: selectionDisabled }} accessibilityLabel={`${nome}, ${formatarData(item.data_jornada)}, ${STATUS_LABELS[item.status]}${duracao ? `, tempo trabalhado: ${duracao}` : ''}`} disabled={selectionDisabled} onPress={() => {
                 if (exclusionMode) setExclusionIds((ids) => checked ? ids.filter((id) => id !== item.id) : [...ids, item.id]);
                 else setSelectedId(checked ? null : item.id);
                 setNotice('');
@@ -207,7 +238,9 @@ export function JornadasScreen() {
               <View style={styles.rowText}>
                 <Text style={styles.person}>{nome}</Text>
                 <Text style={styles.meta}>{nomesFuncoes.get(item.funcao_id) ?? `Função #${item.funcao_id}`} · {nomesSetores.get(item.setor_id) ?? `Setor #${item.setor_id}`}</Text>
-                <Text style={styles.meta}>#{item.id} · {formatarData(item.data_jornada)} · {STATUS_LABELS[item.status]}</Text>
+                <Text style={styles.meta}>#{item.id} · {formatarData(item.data_jornada)}</Text>
+                {!!duracao && <Text style={styles.meta}>Tempo trabalhado · {duracao}</Text>}
+                <Text style={styles.rowStatus}>{STATUS_LABELS[item.status]}</Text>
                 {!!item.entrada_em && <Text style={styles.entryLabel}>Entrada registrada</Text>}
               </View>
               <View style={[styles.radio, checked && styles.radioChecked]}>{checked && <Text style={styles.check}>✓</Text>}</View>
@@ -250,34 +283,10 @@ export function JornadasScreen() {
         </View></View>
       </Modal>
 
-      <Modal transparent visible={filterOpen} animationType="fade" onRequestClose={() => setFilterOpen(false)}>
-        <View style={styles.overlay}><View accessibilityViewIsModal style={styles.dialog}>
-          <ScrollView keyboardShouldPersistTaps="handled">
-            <Text accessibilityRole="header" style={styles.dialogTitle}>Filtrar jornadas</Text>
-            <Text style={styles.label}>Período da jornada (inclusive)</Text>
-            <View style={styles.dates}>
-              <TextInput accessibilityLabel="Data inicial" placeholder="De: DD/MM/AAAA" placeholderTextColor="#64748B" value={rascunho.data_inicio} onChangeText={(data_inicio) => setRascunho({ ...rascunho, data_inicio })} maxLength={10} style={[styles.input, styles.dateInput]} />
-              <TextInput accessibilityLabel="Data final" placeholder="Até: DD/MM/AAAA" placeholderTextColor="#64748B" value={rascunho.data_fim} onChangeText={(data_fim) => setRascunho({ ...rascunho, data_fim })} maxLength={10} style={[styles.input, styles.dateInput]} />
-            </View>
-            <Text style={styles.label}>Status</Text>
-            <View style={styles.chips}>
-              {([['', 'Todos'], ...Object.entries(STATUS_LABELS)] as const).map(([value, label]) => <Pressable key={value} accessibilityRole="radio" accessibilityState={{ checked: rascunho.status === value }} onPress={() => setRascunho({ ...rascunho, status: value as FiltrosJornadas['status'] })} style={[styles.chip, rascunho.status === value && styles.chipActive]}><Text style={rascunho.status === value ? styles.primaryText : styles.filterButton}>{label}</Text></Pressable>)}
-            </View>
-            <Text style={styles.label}>Prestador</Text>
-            <TextInput accessibilityLabel="Buscar prestador nos filtros" placeholder="Buscar por nome" placeholderTextColor="#64748B" value={prestadorSearch} onChangeText={setPrestadorSearch} style={styles.input} />
-            <View style={styles.chips}>
-              <Pressable accessibilityRole="radio" accessibilityState={{ checked: !rascunho.prestador_id }} onPress={() => setRascunho({ ...rascunho, prestador_id: '' })} style={[styles.chip, !rascunho.prestador_id && styles.chipActive]}><Text style={!rascunho.prestador_id ? styles.primaryText : styles.filterButton}>Todos</Text></Pressable>
-              {dados.prestadores.filter((item) => item.nome.toLocaleLowerCase('pt-BR').includes(prestadorSearch.toLocaleLowerCase('pt-BR'))).map((item) => <Pressable key={item.id} accessibilityRole="radio" accessibilityState={{ checked: rascunho.prestador_id === item.id }} onPress={() => setRascunho({ ...rascunho, prestador_id: item.id })} style={[styles.chip, rascunho.prestador_id === item.id && styles.chipActive]}><Text style={rascunho.prestador_id === item.id ? styles.primaryText : styles.filterButton}>{item.nome} · #{item.id}</Text></Pressable>)}
-            </View>
-            {!!filterError && <Text accessibilityRole="alert" style={styles.error}>{filterError}</Text>}
-            <View style={styles.actions}>
-              <Pressable accessibilityRole="button" onPress={() => applyFilters(FILTROS_VAZIOS)} style={styles.secondary}><Text style={styles.filterButton}>Limpar</Text></Pressable>
-              <Pressable accessibilityRole="button" onPress={() => setFilterOpen(false)} style={styles.secondary}><Text style={styles.filterButton}>Cancelar</Text></Pressable>
-              <Pressable accessibilityRole="button" onPress={() => applyFilters(rascunho)} style={styles.primary}><Text style={styles.primaryText}>Aplicar</Text></Pressable>
-            </View>
-          </ScrollView>
-        </View></View>
-      </Modal>
+      {filterOpen && <JornadasFiltros applied={filtros}
+        onApply={applyFilters} onClose={() => setFilterOpen(false)} />}
+      {orderOpen && <JornadasOrdem value={order} onClose={() => setOrderOpen(false)}
+        onSelect={(value) => { setOrder(value); setOrderOpen(false); }} />}
     </View>
   );
 }
@@ -292,8 +301,15 @@ const styles = StyleSheet.create({
   listContent: { paddingHorizontal: 25, paddingBottom: 12, flexGrow: 1 },
   title: { color: BLUE, fontSize: 32, textAlign: 'center', marginTop: 16, marginBottom: 16 },
   toolbar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  shortcuts: { flexWrap: 'wrap', gap: 8 },
+  quickLinks: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   count: { color: '#52637C', fontSize: 13 },
   filterButton: { color: BLUE, fontWeight: '600', paddingVertical: 6 },
+  filterTrigger: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, borderWidth: 1, borderColor: '#A3B9D8', borderRadius: 8, backgroundColor: '#FFFFFF' },
+  filterTriggerActive: { borderColor: BLUE, backgroundColor: '#E5EDFF' },
+  searchField: { minHeight: 48, alignItems: 'center', flexDirection: 'row', gap: 8, paddingLeft: 12, paddingRight: 4, borderRadius: 10, borderWidth: 1, borderColor: '#A3B9D8', backgroundColor: '#FFFFFF', marginBottom: 12 },
+  searchInput: { flex: 1, minWidth: 0, alignSelf: 'stretch', color: '#173F6B', fontSize: 16, paddingVertical: 8 },
+  clearSearch: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   row: { gap: 4, minHeight: 86, borderWidth: 2, borderColor: BLUE, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 14 },
   selectArea: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   newButton: { backgroundColor: BLUE, borderRadius: 8, padding: 12, alignItems: 'center', marginBottom: 12 },
@@ -302,6 +318,7 @@ const styles = StyleSheet.create({
   person: { fontSize: 20, color: BLUE },
   meta: { fontSize: 12, color: '#3D5D85', lineHeight: 17 },
   entryLabel: { fontSize: 12, fontWeight: '600', color: '#17643F' },
+  rowStatus: { alignSelf: 'flex-start', maxWidth: '100%', color: '#173F6B', fontWeight: '700', fontSize: 14, lineHeight: 20, backgroundColor: '#E5EDFF', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
   radio: { width: 27, height: 27, borderWidth: 2, borderColor: BLUE, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   radioChecked: { backgroundColor: BLUE }, check: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
   icon: { width: 40, height: 42 },
@@ -326,11 +343,4 @@ const styles = StyleSheet.create({
   primary: { backgroundColor: BLUE, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 16, justifyContent: 'center' },
   primaryText: { color: '#FFFFFF', fontWeight: '600' },
   secondary: { paddingHorizontal: 8, paddingVertical: 6, justifyContent: 'center' },
-  label: { color: '#173F6B', fontWeight: '600', marginTop: 10, marginBottom: 8 },
-  dates: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  input: { borderWidth: 1, borderColor: '#A3B9D8', borderRadius: 8, padding: 12, color: '#173F6B', fontSize: 14 },
-  dateInput: { flexGrow: 1, flexBasis: 160 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 10 },
-  chip: { borderWidth: 1, borderColor: BLUE, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 7, justifyContent: 'center' },
-  chipActive: { backgroundColor: BLUE },
 });

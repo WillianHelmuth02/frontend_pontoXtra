@@ -42,7 +42,7 @@ function ConsultaRelatorios() {
   }
   const f = consulta.filtros;
   const periodo = `${f.data_inicio || 'Início não limitado'} até ${f.data_fim || 'Fim não limitado'}`;
-  return <JourneyShell title="Relatórios">
+  return <JourneyShell title="Relatórios" titleIcon="reports">
     <Text style={ui.text}>Consulte jornadas e totais pelo período da data de referência da jornada. As datas inicial e final são inclusivas.</Text>
     <Field label="Data inicial (DD/MM/AAAA)" value={form.data_inicio} onChangeText={(v) => setCampo('data_inicio', v)} />
     <Field label="Data final (DD/MM/AAAA)" value={form.data_fim} onChangeText={(v) => setCampo('data_fim', v)} />

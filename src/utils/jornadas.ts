@@ -53,6 +53,47 @@ export const FILTROS_VAZIOS: FiltrosJornadas = {
   prestador_id: '', status: '', data_inicio: '', data_fim: '',
 };
 
+export const ORDENS_JORNADAS = {
+  recentes: 'Mais recentes',
+  antigas: 'Mais antigas',
+  nome_asc: 'Nome de A a Z',
+  nome_desc: 'Nome de Z a A',
+  duracao_desc: 'Maior duração',
+  duracao_asc: 'Menor duração',
+} as const;
+export type OrdemJornadas = keyof typeof ORDENS_JORNADAS;
+
+export function nomePrestador(id: string, nomes: ReadonlyMap<string, string>) {
+  return nomes.get(id) ?? `Prestador #${id}`;
+}
+
+function textoBusca(value: string) {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
+}
+
+export function exibirJornadas(jornadas: Jornada[], nomes: ReadonlyMap<string, string>, busca: string, ordem: OrdemJornadas) {
+  const termo = textoBusca(busca.trim());
+  const visiveis = termo ? jornadas.filter((item) => textoBusca(nomePrestador(item.prestador_id, nomes)).includes(termo)) : jornadas;
+  // A API já ordena por data e ID decrescentes. Os empates de nome ou duração mantêm essa ordem.
+  if (ordem === 'recentes') return visiveis;
+  if (ordem === 'antigas') return [...visiveis].reverse();
+  if (ordem === 'nome_asc' || ordem === 'nome_desc') {
+    const direction = ordem === 'nome_asc' ? 1 : -1;
+    return [...visiveis].sort((a, b) => direction * nomePrestador(a.prestador_id, nomes)
+      .localeCompare(nomePrestador(b.prestador_id, nomes), 'pt-BR', { sensitivity: 'base' }));
+  }
+  const direction = ordem === 'duracao_asc' ? 1 : -1;
+  return [...visiveis].sort((a, b) => {
+    if (a.minutos_trabalhados == null) return b.minutos_trabalhados == null ? 0 : 1;
+    if (b.minutos_trabalhados == null) return -1;
+    return direction * (a.minutos_trabalhados - b.minutos_trabalhados);
+  });
+}
+
+export function formatarDuracao(minutos: number) {
+  return `${Math.floor(minutos / 60)}h ${String(minutos % 60).padStart(2, '0')}min`;
+}
+
 /** Só antecipa a habilitação da UI. O servidor revalida perfil, estado atual e
  * sequência dentro de transação; selecionar uma linha nunca registra um evento.
  */

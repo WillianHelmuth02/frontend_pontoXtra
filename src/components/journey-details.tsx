@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/auth';
 import { useApiResource } from '@/hooks/use-api-resource';
 import { api } from '@/services/api';
 import { carregarDetalhes } from '@/services/jornadas';
-import { ACAO_LABELS, STATUS_LABELS, acoesPermitidas, dataParaApi, dinheiro, formatarData, horarioFormulario, type AcaoJornada, type HistoricoJornada, type Jornada } from '@/utils/jornadas';
+import { ACAO_LABELS, STATUS_LABELS, acoesPermitidas, dataParaApi, dinheiro, formatarData, formatarDuracao, horarioFormulario, type AcaoJornada, type HistoricoJornada, type Jornada } from '@/utils/jornadas';
 import { Button, Field, JourneyShell, ResourceState, ui } from './journey-ui';
 
 const HISTORICO_LABELS: Record<string, string> = {
@@ -131,7 +131,7 @@ export default function JourneyDetails({ id, criada }: { id: string; criada: boo
         <Text style={ui.subtitle}>Marcações · Brasília (UTC-03)</Text>
         {(['entrada_em', 'inicio_intervalo_em', 'fim_intervalo_em', 'saida_em'] as const).map((key) => <Text key={key} style={ui.text}>{CAMPOS[key]}: {j[key] ? horarioFormulario(j[key]) : 'Não registrada'}</Text>)}
         <Text style={ui.text}>Valor/hora histórico: {dinheiro(j.valor_hora)}</Text>
-        <Text style={ui.text}>Tempo líquido: {j.minutos_trabalhados === null ? 'Ainda não calculado' : `${Math.floor(j.minutos_trabalhados / 60)}h ${String(j.minutos_trabalhados % 60).padStart(2, '0')}min`}</Text>
+        <Text style={ui.text}>Tempo líquido: {j.minutos_trabalhados === null ? 'Ainda não calculado' : formatarDuracao(j.minutos_trabalhados)}</Text>
         <Text style={ui.label}>Valor calculado: {dinheiro(j.valor_calculado)}</Text>
       </View>
       <View style={ui.card}>

@@ -1,5 +1,6 @@
 import { Redirect, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { SymbolView } from 'expo-symbols';
 import type { PropsWithChildren } from 'react';
 import { ActivityIndicator, FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useState } from 'react';
@@ -9,6 +10,19 @@ import { NotificationLink } from '@/components/notification-link';
 
 export const BLUE = '#005BCC';
 export const PERFIS = { OPERACIONAL: 'Operacional', RH: 'RH', ADMINISTRADOR: 'Administrador' };
+
+const JOURNEY_ICONS = {
+  trash: { ios: 'trash', android: 'delete_outline', web: 'delete_outline' },
+  reports: { ios: 'chart.bar', android: 'bar_chart', web: 'bar_chart' },
+  search: { ios: 'magnifyingglass', android: 'search', web: 'search' },
+  clear: { ios: 'xmark', android: 'close', web: 'close' },
+  sort: { ios: 'arrow.up.arrow.down', android: 'sort', web: 'sort' },
+  filters: { ios: 'line.3.horizontal.decrease', android: 'filter_list', web: 'filter_list' },
+} as const;
+
+export function JourneyIcon({ icon, size = 20 }: { icon: keyof typeof JOURNEY_ICONS; size?: number }) {
+  return <View aria-hidden><SymbolView name={JOURNEY_ICONS[icon]} size={size} tintColor={BLUE} /></View>;
+}
 
 export function AppHeader({ nome, perfil }: { nome: string; perfil: keyof typeof PERFIS }) {
   return (
@@ -27,14 +41,21 @@ export function AppHeader({ nome, perfil }: { nome: string; perfil: keyof typeof
   );
 }
 
-export function JourneyShell({ title, children, busy = false }: PropsWithChildren<{ title: string; busy?: boolean }>) {
+export function JourneyShell({ title, titleIcon, children, busy = false }: PropsWithChildren<{
+  title: string; titleIcon?: keyof typeof JOURNEY_ICONS; busy?: boolean;
+}>) {
   const { usuario } = useAuth();
   if (!usuario) return <Redirect href="/login" />;
   return <View style={ui.screen}>
     <StatusBar style="light" />
     <AppHeader nome={usuario.nome} perfil={usuario.perfil} />
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={ui.content}>
-      <Text accessibilityRole="header" style={ui.title}>{title}</Text>
+      {titleIcon ? (
+        <View style={ui.titleRow}>
+          <View style={ui.titleIcon}><JourneyIcon icon={titleIcon} size={24} /></View>
+          <Text accessibilityRole="header" style={[ui.title, ui.titleWithIcon]}>{title}</Text>
+        </View>
+      ) : <Text accessibilityRole="header" style={ui.title}>{title}</Text>}
       {children}
     </ScrollView>
     <SafeAreaView edges={['bottom']} style={ui.blue}><View style={ui.footer}>
@@ -108,6 +129,9 @@ export const ui = StyleSheet.create({
   userProfile: { color: '#E5EDFF', fontSize: 12 },
   content: { width: '100%', maxWidth: 680, alignSelf: 'center', padding: 24, gap: 14, flexGrow: 1 },
   title: { fontSize: 28, color: BLUE, fontWeight: '700', marginVertical: 8 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  titleIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: '#E5EDFF' },
+  titleWithIcon: { flexShrink: 1 },
   subtitle: { fontSize: 20, color: BLUE, fontWeight: '700' },
   text: { color: '#294B75', fontSize: 15, lineHeight: 23 },
   card: { borderWidth: 1.5, borderColor: BLUE, borderRadius: 8, padding: 16, gap: 10 },

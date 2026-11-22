@@ -58,7 +58,7 @@ export default function LixeiraScreen() {
     await resource.reload();
   }
 
-  return <JourneyShell title="Lixeira de jornadas" busy={pending}>
+  return <JourneyShell title="Lixeira de jornadas" titleIcon="trash" busy={pending}>
     <Text style={ui.text}>Somente jornadas canceladas e sem marcações ficam aqui. Restaurar devolve à consulta como Cancelado. Excluir definitivamente apaga a jornada e todo o seu histórico do banco, sem recuperação pelo aplicativo.</Text>
     <Text style={ui.text}>{usuario?.perfil === 'RH' ? 'RH pode gerenciar as jornadas da lixeira.' : 'Você pode consultar e gerenciar as jornadas de sua autoria na lixeira.'}</Text>
     <ResourceState loading={resource.loading} error={resource.error} onRetry={() => void reload()} />

@@ -31,6 +31,21 @@ async function run() {
   }
   assert.throws(() => queryJornadas({ ...FILTROS_VAZIOS, data_inicio: '19/10/2026', data_fim: '18/10/2026' }));
   assert.equal(formatarData('2026-10-18'), '18/10/2026');
+  const names = new Map([['1', 'Álvaro'], ['2', 'Bruna'], ['3', 'Zoé']]);
+  const jornadas = [
+    { id: '4', prestador_id: '2', minutos_trabalhados: null },
+    { id: '3', prestador_id: '1', minutos_trabalhados: 90 },
+    { id: '2', prestador_id: '3', minutos_trabalhados: 0 },
+    { id: '1', prestador_id: '1', minutos_trabalhados: 90 },
+  ];
+  const idsExibidos = (ordem, busca = '') => rules.exibirJornadas(jornadas, names, busca, ordem).map(({ id }) => id);
+  assert.deepEqual(idsExibidos('nome_asc', ' ALVAR '), ['3', '1']);
+  assert.deepEqual(idsExibidos('nome_asc'), ['3', '1', '4', '2']);
+  assert.deepEqual(idsExibidos('nome_desc'), ['2', '4', '3', '1']);
+  assert.deepEqual(idsExibidos('antigas'), ['1', '2', '3', '4']);
+  assert.deepEqual(idsExibidos('duracao_asc'), ['2', '3', '1', '4']);
+  assert.deepEqual(idsExibidos('duracao_desc'), ['3', '1', '2', '4']);
+  assert.deepEqual(idsExibidos('recentes'), ['4', '3', '2', '1']);
   const open = { status: 'AUTORIZADA_PARA_REALIZACAO', entrada_em: null, saida_em: null, realizacao_decidida_por: '9', realizacao_decidida_em: '2026-10-18T09:00:00Z', justificativa_rejeicao_realizacao: null, legado_sem_aprovacao_previa: false };
   assert.equal(podeRegistrarEntrada('OPERACIONAL', open), true);
   assert.equal(podeRegistrarEntrada('RH', open), false);
