@@ -17,7 +17,9 @@ const HOURS = Array.from({ length: 24 }, (_, index) => twoDigits(index));
 const MINUTES = Array.from({ length: 60 }, (_, index) => twoDigits(index));
 
 function Calendar({ value, onSelect }: { value: string; onSelect: (date: string) => void }) {
-  const [year, month] = dataParaApi(value).split('-').map(Number);
+  const today = new Date();
+  const initial = dataParaApi(value) || [today.getFullYear(), today.getMonth() + 1].join('-');
+  const [year, month] = initial.split('-').map(Number);
   const [visibleMonth, setVisibleMonth] = useState(() => year * 12 + month - 1);
   const visibleYear = Math.floor(visibleMonth / 12);
   const monthIndex = visibleMonth % 12;
@@ -123,12 +125,12 @@ export function SchedulePicker({ label, mode, value, onChange, disabled }: {
       <Text style={ui.label}>{label}</Text>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${label}, ${value || 'Selecionar horário'}`}
+        accessibilityLabel={`${label}, ${value || (isDate ? 'Selecionar data' : 'Selecionar horário')}`}
         accessibilityState={{ disabled: !!disabled, expanded: open }}
         disabled={disabled}
         onPress={openPicker}
         style={({ pressed }) => [styles.trigger, (pressed || disabled) && ui.dim]}>
-        <Text style={value ? styles.triggerValue : ui.text}>{value || 'Selecionar horário'}</Text>
+        <Text style={value ? styles.triggerValue : ui.text}>{value || (isDate ? 'Selecionar data' : 'Selecionar horário')}</Text>
         <Text aria-hidden style={styles.triggerArrow}>›</Text>
       </Pressable>
       {open && (

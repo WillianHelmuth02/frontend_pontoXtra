@@ -34,12 +34,22 @@ async function run() {
   const chamadas = [];
   const mockApi = async (url) => { chamadas.push(url); return url.includes('/totais') ? { geral: { quantidade: '9007199254740993' } } : { itens: [], pagina: 2 }; };
   const service = carregar('../src/services/relatorios.ts', { '@/services/api': { api: mockApi }, '@/utils/relatorios': relatorios });
-  const resultado = await service.carregarRelatorio(filtros, 2);
+  const resultado = await service.carregarRelatorio(filtros, 2, true);
   assert.equal(resultado.chave, JSON.stringify([filtros, 2]));
   assert.equal(resultado.totais.geral.quantidade, '9007199254740993');
-  assert.deepEqual(chamadas.sort(), [urls.jornadas, urls.totais].sort());
+  assert.deepEqual(chamadas.sort(), [urls.jornadas, urls.totais, urls.distribuicoes].sort());
+  chamadas.length = 0;
+  const pessoal = await service.carregarRelatorio(filtros, 2, false);
+  assert.deepEqual(chamadas, [urls.minhas]);
+  assert.equal(pessoal.totais, null);
+  const pesquisa = consultasRelatorio({ ...filtros, busca: 'Ana & Bia', setor_id: '5' }, 1);
+  for (const url of Object.values(pesquisa)) {
+    const params = new URL(url, 'http://teste').searchParams;
+    assert.equal(params.get('busca'), 'Ana & Bia');
+    assert.equal(params.get('setor_id'), '5');
+  }
   const falha = carregar('../src/services/relatorios.ts', { '@/services/api': { api: async (url) => { if (url.includes('/totais')) throw new Error('falha'); return {}; } }, '@/utils/relatorios': relatorios });
-  await assert.rejects(falha.carregarRelatorio(filtros, 2), /falha/);
+  await assert.rejects(falha.carregarRelatorio(filtros, 2, true), /falha/);
   console.log('Relatórios: filtros idênticos, datas, paginação isolada, precisão, nulos e falha sem resultado parcial validados.');
 }
 run().catch((error) => { console.error(error); process.exitCode = 1; });

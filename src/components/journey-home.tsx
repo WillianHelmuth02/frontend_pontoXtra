@@ -14,7 +14,8 @@ type Totais = { por_status: { status: StatusJornada; quantidade: string; valor_c
  */
 export default function JourneyHome() {
   const { usuario } = useAuth();
-  const loader = useCallback(() => api<Totais>('/relatorios/totais'), []);
+  const adm = usuario?.perfil === 'ADMINISTRADOR';
+  const loader = useCallback(() => api<Totais>(adm ? '/relatorios/totais' : '/relatorios/pendencias-rh'), [adm]);
   const resource = useApiResource(loader, !!usuario && usuario.perfil !== 'OPERACIONAL');
   if (!usuario) return <Redirect href="/login" />;
   if (usuario.perfil === 'OPERACIONAL') return <Redirect href="/jornadas" />;
@@ -26,12 +27,12 @@ export default function JourneyHome() {
       const total = resource.data?.por_status.find((group) => group.status === status);
       return <View style={ui.card} key={status}>
         <Text style={ui.subtitle}>{status === 'AUTORIZADO' ? 'Pagamentos a registrar' : STATUS_LABELS[status]}</Text>
-        <Text style={ui.text}>{total?.quantidade ?? '0'} jornada(s) · {dinheiro(total?.valor_calculado ?? '0.00')}</Text>
+        <Text style={ui.text}>{total?.quantidade ?? '0'} jornada(s){adm && ' · ' + dinheiro(total?.valor_calculado ?? '0.00')}</Text>
         <Button label="Consultar jornadas" secondary onPress={() => router.push({ pathname: '/jornadas', params: { status } })} />
       </View>;
     })}
     <Text accessibilityRole="header" style={ui.title}>Acesso rápido</Text>
-    <Button label="Relatórios e totais" secondary onPress={() => router.push('/relatorios')} />
+    <Button label="Relatórios" secondary onPress={() => router.push('/relatorios')} />
     {usuario.perfil === 'ADMINISTRADOR' && <Button label="Gerenciar usuários" secondary onPress={() => router.push('/usuarios')} />}
     {usuario.perfil === 'RH' && <Button label="Criar jornada" onPress={() => router.push('/nova-jornada')} />}
     {usuario.perfil === 'RH' && <>

@@ -41,15 +41,15 @@ export function AppHeader({ nome, perfil }: { nome: string; perfil: keyof typeof
   );
 }
 
-export function JourneyShell({ title, titleIcon, children, busy = false }: PropsWithChildren<{
-  title: string; titleIcon?: keyof typeof JOURNEY_ICONS; busy?: boolean;
+export function JourneyShell({ title, titleIcon, wide, children, busy = false }: PropsWithChildren<{
+  title: string; wide?: boolean; titleIcon?: keyof typeof JOURNEY_ICONS; busy?: boolean;
 }>) {
   const { usuario } = useAuth();
   if (!usuario) return <Redirect href="/login" />;
   return <View style={ui.screen}>
     <StatusBar style="light" />
     <AppHeader nome={usuario.nome} perfil={usuario.perfil} />
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={ui.content}>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[ui.content, wide && { maxWidth: 1240, paddingHorizontal: 16 }]}>
       {titleIcon ? (
         <View style={ui.titleRow}>
           <View style={ui.titleIcon}><JourneyIcon icon={titleIcon} size={24} /></View>
