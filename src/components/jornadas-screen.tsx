@@ -198,7 +198,7 @@ export function JornadasScreen() {
             </>}
             <View style={styles.searchField}>
               <JourneyIcon icon="search" />
-              <TextInput accessibilityLabel="Buscar pelo nome do prestador" placeholder="Buscar pelo nome do prestador"
+              <TextInput accessibilityLabel="Buscar pelo nome do prestador ou número da jornada" placeholder="Nome do prestador ou número da jornada"
                 placeholderTextColor="#52637C" autoCorrect={false} returnKeyType="search" editable={!pending}
                 value={search} onChangeText={updateSearch} style={styles.searchInput} />
               {!!search && <Pressable accessibilityRole="button" accessibilityLabel="Limpar busca" disabled={pending}

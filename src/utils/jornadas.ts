@@ -73,7 +73,12 @@ function textoBusca(value: string) {
 
 export function exibirJornadas(jornadas: Jornada[], nomes: ReadonlyMap<string, string>, busca: string, ordem: OrdemJornadas) {
   const termo = textoBusca(busca.trim());
-  const visiveis = termo ? jornadas.filter((item) => textoBusca(nomePrestador(item.prestador_id, nomes)).includes(termo)) : jornadas;
+  const visiveis = termo
+    ? jornadas.filter((item) =>
+      textoBusca(nomePrestador(item.prestador_id, nomes)).includes(termo)
+      || item.id.includes(termo),
+    )
+    : jornadas;
   // A API já ordena por data e ID decrescentes. Os empates de nome ou duração mantêm essa ordem.
   if (ordem === 'recentes') return visiveis;
   if (ordem === 'antigas') return [...visiveis].reverse();
