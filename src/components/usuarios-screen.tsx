@@ -4,7 +4,7 @@ import { Modal, ScrollView, Text, View } from 'react-native';
 import { useAuth } from '@/contexts/auth';
 import { useApiResource } from '@/hooks/use-api-resource';
 import { api } from '@/services/api';
-import { dadosUsuario, PERFIS_USUARIO, type PerfilUsuario, type UsuarioCadastro } from '@/utils/usuarios';
+import { dadosUsuario, PERFIS_USUARIO, SENHA_MAX, SENHA_MIN, type PerfilUsuario, type UsuarioCadastro } from '@/utils/usuarios';
 import { Button, Field, JourneyShell, PERFIS, ResourceState, ui } from './journey-ui';
 
 type Acao = { tipo: 'editar'; item: UsuarioCadastro | null } | { tipo: 'status'; item: UsuarioCadastro };
@@ -99,7 +99,7 @@ function ListaUsuarios({ autorId }: { autorId: string }) {
               <View style={ui.row}>{PERFIS_USUARIO.map((valor) => <Button key={valor} label={PERFIS[valor]} secondary={perfil !== valor} disabled={pending || propria} onPress={() => setPerfil(valor)} />)}</View>
               <Field label={acao.item ? 'Nova senha (opcional)' : 'Senha *'} value={senha} onChangeText={setSenha} secureTextEntry disabled={pending} />
               <Field label="Confirmar senha" value={confirmar} onChangeText={setConfirmar} secureTextEntry disabled={pending} />
-              <Text style={ui.text}>Use entre 15 e 128 caracteres. Na edição, deixe os dois campos de senha vazios para manter a senha atual.</Text>
+              <Text style={ui.text}>Use entre {SENHA_MIN} e {SENHA_MAX} caracteres. Na edição, deixe os dois campos de senha vazios para manter a senha atual.</Text>
               <Text style={ui.text}>Alterar e-mail, perfil ou senha encerra as sessões anteriores desse usuário.</Text>
               {propria && <Text style={ui.text}>Após salvar sua própria conta, entre novamente. Seu perfil de administrador será mantido.</Text>}
             </> : <Text style={ui.text}>{acao?.item.nome}: {acao?.item.ativo ? 'confirma a desativação? O acesso será bloqueado e as sessões anteriores encerradas.' : 'confirma a reativação? O usuário poderá entrar novamente com suas credenciais.'}</Text>}

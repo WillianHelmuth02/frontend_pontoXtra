@@ -21,11 +21,11 @@ for (const campos of [
   ['a'.repeat(121), original.email, 'RH', senha, senha],
   ['Teste', 'invalido', 'RH', senha, senha],
   ['Teste', original.email, 'INVALIDO', senha, senha],
-  ['Teste', original.email, 'RH', 'curta', 'curta'],
+  ['Teste', original.email, 'RH', 'a'.repeat(7), 'a'.repeat(7)],
   ['Teste', original.email, 'RH', ' '.repeat(15), ' '.repeat(15)],
   ['Teste', original.email, 'RH', 'a'.repeat(129), 'a'.repeat(129)],
   ['Teste', original.email, 'RH', senha, 'diferente'],
 ]) assert.throws(() => dadosUsuario(...campos, null));
 assert.throws(() => dadosUsuario(original.nome, original.email, original.perfil, '', senha, original));
-assert.equal(dadosUsuario('😀'.repeat(120), original.email, 'RH', '😀'.repeat(15), '😀'.repeat(15), null).senha.length, 30);
+assert.equal(dadosUsuario('😀'.repeat(120), original.email, 'RH', '😀'.repeat(8), '😀'.repeat(8), null).senha.length, 16);
 console.log('Usuários: criação, edição parcial, normalização, confirmação e limites de senha validados.');

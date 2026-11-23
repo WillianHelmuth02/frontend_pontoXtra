@@ -1,4 +1,6 @@
 export const PERFIS_USUARIO = ['OPERACIONAL', 'RH', 'ADMINISTRADOR'] as const;
+export const SENHA_MIN = 8;
+export const SENHA_MAX = 128;
 export type PerfilUsuario = typeof PERFIS_USUARIO[number];
 export type UsuarioCadastro = { id: string; nome: string; email: string; perfil: PerfilUsuario; ativo: boolean };
 
@@ -14,7 +16,10 @@ export function dadosUsuario(nome: string, email: string, perfil: PerfilUsuario,
   if (!original || contato !== original.email) dados.email = contato;
   if (!original || perfil !== original.perfil) dados.perfil = perfil;
   if (!original || senha !== '' || confirmar !== '') {
-    if (Array.from(senha).length < 15 || Array.from(senha).length > 128 || !senha.trim()) throw new Error('Senha deve conter entre 15 e 128 caracteres e não pode conter somente espaços.');
+    const tamanho = Array.from(senha).length;
+    if (tamanho < SENHA_MIN || tamanho > SENHA_MAX || !senha.trim()) {
+      throw new Error(`Senha deve conter entre ${SENHA_MIN} e ${SENHA_MAX} caracteres e não pode conter somente espaços.`);
+    }
     if (senha !== confirmar) throw new Error('A confirmação da senha não confere.');
     dados.senha = senha;
   }

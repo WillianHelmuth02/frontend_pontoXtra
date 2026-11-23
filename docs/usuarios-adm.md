@@ -4,7 +4,7 @@ Revisão consolidada de 28/10/2026: esta tela e relatórios estão implementados
 
 No painel ADM, **Gerenciar usuários** abre `/usuarios`. Demais perfis retornam ao início sem carregar a lista. A API também exige ADMINISTRADOR em todas as rotas de usuários.
 
-Consulta com busca por nome/e-mail e filtros ativos/inativos/todos. Criação com nome (até 120 caracteres), e-mail (até 180), perfil e senha confirmada (15 a 128 caracteres). Senha é mascarada, não é consultada da API nem exibida na lista. Na edição, deixar ambos os campos de senha vazios mantém a senha atual; fechar o formulário limpa esses campos da tela.
+Consulta com busca por nome/e-mail e filtros ativos/inativos/todos. Criação com nome (até 120 caracteres), e-mail (até 180), perfil e senha confirmada (8 a 128 caracteres). O formulário mascara a senha e limpa os campos de senha ao ser fechado. Na edição, deixar ambos os campos de senha vazios mantém a senha atual.
 
 Edição envia somente campos alterados. E-mail, perfil, senha e ativação revogam sessões do usuário conforme o backend. Ao editar a própria conta, a interface solicita novo login após salvar para atualizar os dados da sessão. O próprio ADM não pode desativar sua conta nem remover seu perfil de administrador. A API continua sendo a autoridade dessas proteções. Desativação/reativação exigem confirmação; vínculos com registros anteriores são preservados.
 
