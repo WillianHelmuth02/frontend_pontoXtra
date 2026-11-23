@@ -8,8 +8,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://192.168.0.119:3000",
-        "PONTOXTRA_ALLOW_HTTP": "true"
+        "EXPO_PUBLIC_API_URL": "https://backendpontoxtra-production.up.railway.app"
       }
     },
     "preview": {
@@ -18,8 +17,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://192.168.0.119:3000",
-        "PONTOXTRA_ALLOW_HTTP": "true"
+        "EXPO_PUBLIC_API_URL": "https://backendpontoxtra-production.up.railway.app"
       }
     },
     "production": {
