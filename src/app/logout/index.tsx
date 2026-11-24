@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/auth';
 import { StatusBar } from 'expo-status-bar';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppHeader } from '@/components/journey-ui';
 
 /**
  * Posições [esquerda, topo] dos círculos decorativos, em unidades de layout.
@@ -42,6 +43,7 @@ export default function LogoutScreen() {
   return (
     <View style={styles.screen}>
       <StatusBar style="light" />
+      <AppHeader nome={usuario.nome} perfil={usuario.perfil} />
       {/* A rolagem mantém o botão alcançável em aparelhos com pouca altura útil. */}
       <ScrollView bounces={false} contentContainerStyle={styles.content}>
         {/* Fundo sem interação; overflow no cabeçalho recorta as formas nas bordas. */}
@@ -52,10 +54,7 @@ export default function LogoutScreen() {
             ))}
           </View>
         </View>
-        {/* AJUSTE DA ALTURA DA LOGO: 130 é a distância mínima do topo ao cartão.
-            insets.top + 70 aumenta essa distância se a área do sistema exigir.
-            Aumentar o mínimo desce o cartão e todo o painel que vem depois dele. */}
-        <View style={[styles.logoCard, { marginTop: Math.max(130, insets.top + 70) }]}>
+        <View style={[styles.logoCard, { marginTop: 130 }]}>
           <Image
             source={require('@/assets/images/Logo/Logo principal.png')}
             contentFit="contain"

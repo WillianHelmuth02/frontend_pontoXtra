@@ -5,8 +5,8 @@ import { useAuth } from '@/contexts/auth';
 import { useApiResource } from '@/hooks/use-api-resource';
 import { api } from '@/services/api';
 import { carregarDetalhes } from '@/services/jornadas';
-import { ACAO_LABELS, STATUS_LABELS, acoesPermitidas, dataParaApi, dinheiro, formatarData, formatarDuracao, horarioFormulario, type AcaoJornada, type HistoricoJornada, type Jornada } from '@/utils/jornadas';
-import { Button, Field, JourneyShell, ResourceState, ui } from './journey-ui';
+import { ACAO_LABELS, STATUS_LABELS, acoesPermitidas, dataParaApi, dinheiro, formatarData, formatarDuracao, horarioFormulario, type AcaoJornada, type AutorJornada, type HistoricoJornada, type Jornada } from '@/utils/jornadas';
+import { Button, Field, JourneyShell, PERFIS, ResourceState, ui } from './journey-ui';
 import { AvisoEntrada } from './aviso-entrada';
 
 const HISTORICO_LABELS: Record<string, string> = {
@@ -23,8 +23,11 @@ const CAMPOS: Record<string, string> = {
   prestador_id: 'Prestador (ID)', funcao_id: 'Função (ID)', setor_id: 'Setor (ID)', criada_por: 'Criada pelo usuário',
   excluida_em: 'Enviada à lixeira em', excluida_por: 'Enviada à lixeira pelo usuário',
 };
-function auditValue(key: string, value: unknown): string {
+const CAMPOS_USUARIO = new Set(['criada_por', 'realizacao_decidida_por', 'conferida_por', 'decidida_por', 'paga_por', 'excluida_por']);
+
+function auditValue(key: string, value: unknown, usuarios: HistoricoJornada['usuarios_referenciados']): string {
   if (value == null) return 'Não informado';
+  if (CAMPOS_USUARIO.has(key)) return nomeAutor(usuarios?.[String(value)], key === 'realizacao_decidida_por' || key === 'decidida_por');
   if (key === 'status') return STATUS_LABELS[value as keyof typeof STATUS_LABELS] ?? String(value);
   if (typeof value === 'string' && key.endsWith('_em')) return horarioFormulario(value);
   if (typeof value === 'string' && key.startsWith('data_')) return formatarData(value);
@@ -32,9 +35,18 @@ function auditValue(key: string, value: unknown): string {
   return String(value);
 }
 
-/** Auditoria somente leitura. Exibe alterações campo a campo, sem oferecer
- * edição do histórico. Autor usa ID porque a API de usuários é restrita ao ADM.
- */
+const ACOES_ADM = new Set(['AUTORIZACAO_REALIZACAO', 'REJEICAO_REALIZACAO', 'AUTORIZACAO', 'REJEICAO']);
+
+export function nomeAutor(autor: AutorJornada | null | undefined, decisaoAdm = false) {
+  if (!autor) return 'Responsável não identificado';
+  return `${autor.nome} (${decisaoAdm || autor.perfil === 'ADMINISTRADOR' ? 'ADM' : PERFIS[autor.perfil]})`;
+}
+
+function linhaDecisao(data: string, autor: AutorJornada | null | undefined, rejeitada: boolean) {
+  return `${rejeitada ? 'Rejeitado' : 'Aprovado'} por ${nomeAutor(autor, true)} em ${horarioFormulario(data)}`;
+}
+
+/** Exibe a auditoria campo a campo. */
 export function History({ items }: { items: HistoricoJornada[] }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   return <>
@@ -46,13 +58,13 @@ export function History({ items }: { items: HistoricoJornada[] }) {
       const changes = [...new Set([...Object.keys(before), ...Object.keys(after)])].filter((key) => JSON.stringify(before[key]) !== JSON.stringify(after[key]));
       return <View key={item.id} style={ui.card}>
         <Text style={ui.subtitle}>{HISTORICO_LABELS[item.acao] ?? item.acao}</Text>
-        <Text style={ui.text}>{horarioFormulario(item.criado_em)} · Usuário #{item.usuario_id}</Text>
+        <Text style={ui.text}>{horarioFormulario(item.criado_em)} · {nomeAutor(item.autor, ACOES_ADM.has(item.acao))}</Text>
         {typeof after.justificativa_cancelamento === 'string' && <Text style={ui.text}>Motivo: {after.justificativa_cancelamento}</Text>}
         <Button secondary label={expanded === item.id ? 'Ocultar alterações' : 'Ver alterações'} onPress={() => setExpanded(expanded === item.id ? null : item.id)} />
         {expanded === item.id && changes.map((key) => <View key={key}>
           <Text style={ui.label}>{CAMPOS[key] ?? key.replace(/_/g, ' ')}</Text>
-          <Text style={ui.text}>Antes: {auditValue(key, before[key])}</Text>
-          <Text style={ui.text}>Depois: {auditValue(key, after[key])}</Text>
+          <Text style={ui.text}>Antes: {auditValue(key, before[key], item.usuarios_referenciados)}</Text>
+          <Text style={ui.text}>Depois: {auditValue(key, after[key], item.usuarios_referenciados)}</Text>
         </View>)}
       </View>;
     })}
@@ -125,7 +137,7 @@ export default function JourneyDetails({ id, criada }: { id: string; criada: boo
       <View style={ui.card}>
         <Text style={ui.subtitle}>1. Autorização para realização</Text>
         {j.legado_sem_aprovacao_previa ? <Text style={ui.text}>Jornada legada, já iniciada antes da nova regra. Não há aprovação prévia registrada.</Text>
-          : <Text style={ui.text}>{j.realizacao_decidida_em ? `Decisão em ${horarioFormulario(j.realizacao_decidida_em)} · Usuário #${j.realizacao_decidida_por}` : 'Ainda sem decisão do ADM para realização.'}</Text>}
+          : <Text style={ui.text}>{j.realizacao_decidida_em ? linhaDecisao(j.realizacao_decidida_em, j.realizacao_decidida_por_usuario, !!j.justificativa_rejeicao_realizacao) : 'Ainda sem decisão do ADM para realização.'}</Text>}
         {!!j.justificativa_rejeicao_realizacao && <Text style={ui.error}>Realização rejeitada: {j.justificativa_rejeicao_realizacao}</Text>}
         {j.status === 'REALIZACAO_REJEITADA' && <Text style={ui.text}>A jornada não pode começar. O criador ou o RH pode cancelá-la e criar outra com os dados corrigidos.</Text>}
       </View>
@@ -139,7 +151,7 @@ export default function JourneyDetails({ id, criada }: { id: string; criada: boo
       <View style={ui.card}>
         <Text style={ui.subtitle}>2. Autorização de pagamento</Text>
         <Text style={ui.text}>Conferência RH: {j.conferida_em ? horarioFormulario(j.conferida_em) : 'Pendente'}</Text>
-        <Text style={ui.text}>Decisão do ADM: {j.decidida_em ? horarioFormulario(j.decidida_em) : 'Pendente após encerramento e conferência'}</Text>
+        <Text style={ui.text}>{j.decidida_em ? linhaDecisao(j.decidida_em, j.decidida_por_usuario, !!j.justificativa_rejeicao) : 'Decisão do ADM pendente após encerramento e conferência.'}</Text>
         {!!j.justificativa_rejeicao && <Text style={ui.error}>Pagamento rejeitado: {j.justificativa_rejeicao}</Text>}
         {!!j.data_pagamento && <Text style={ui.text}>Pagamento registrado em: {formatarData(j.data_pagamento)}</Text>}
       </View>

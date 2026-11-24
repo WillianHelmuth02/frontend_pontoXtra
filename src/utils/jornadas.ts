@@ -1,3 +1,5 @@
+import type { PerfilUsuario } from './usuarios';
+
 /** Contratos usados pela listagem. IDs BIGINT e valores DECIMAL continuam strings,
  * como no backend, para não perder precisão ao converter para number.
  */
@@ -15,11 +17,13 @@ export const STATUS_LABELS = {
 } as const;
 export type StatusJornada = keyof typeof STATUS_LABELS;
 export type CadastroResumo = { id: string; nome: string; ativo?: boolean; valor_hora?: string };
+export type AutorJornada = { nome: string; perfil: PerfilUsuario };
 export type Jornada = {
   id: string;
   criada_por: string;
   excluida_em: string | null;
   excluida_por: string | null;
+  excluida_por_usuario?: AutorJornada | null;
   prestador_id: string;
   funcao_id: string;
   setor_id: string;
@@ -28,6 +32,7 @@ export type Jornada = {
   saida_prevista: string | null;
   status: StatusJornada;
   realizacao_decidida_por: string | null;
+  realizacao_decidida_por_usuario?: AutorJornada | null;
   realizacao_decidida_em: string | null;
   justificativa_rejeicao_realizacao: string | null;
   legado_sem_aprovacao_previa: boolean;
@@ -41,6 +46,7 @@ export type Jornada = {
   justificativa_rejeicao: string | null;
   conferida_em: string | null;
   decidida_em: string | null;
+  decidida_por_usuario?: AutorJornada | null;
   data_pagamento: string | null;
 };
 export type FiltrosJornadas = {
@@ -133,6 +139,8 @@ export function dataParaApi(value: string): string {
 
 export type HistoricoJornada = {
   id: string; usuario_id: string; acao: string; descricao: string | null;
+  autor?: AutorJornada | null;
+  usuarios_referenciados?: Record<string, AutorJornada | null>;
   criado_em: string; dados_anteriores: Record<string, unknown> | null;
   dados_novos: Record<string, unknown> | null;
 };

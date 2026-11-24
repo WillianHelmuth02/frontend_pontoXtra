@@ -30,10 +30,12 @@ export function AppHeader({ nome, perfil }: { nome: string; perfil: keyof typeof
       <View style={ui.header}>
         <View style={ui.headerIdentity}>
           <Text style={ui.brand}>PontoXtra</Text>
-          <View style={ui.userInfo}>
-            <Text accessibilityLabel={nome} numberOfLines={2} style={ui.userName}>{nome}</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel={`Minha conta de ${nome}, ${PERFIS[perfil]}`}
+            onPress={() => router.navigate('/minha-conta')} style={({ pressed }) => [ui.userInfo, pressed && ui.dim]}>
+            <Text numberOfLines={2} style={ui.userName}>{nome}</Text>
             <Text style={ui.userProfile}>{PERFIS[perfil]}</Text>
-          </View>
+            <Text style={ui.accountLink}>Minha conta ›</Text>
+          </Pressable>
         </View>
         <NotificationLink />
       </View>
@@ -76,11 +78,12 @@ export function Button({ label, onPress, disabled, secondary, danger, footer }: 
   </Pressable>;
 }
 
-export function Field({ label, value, onChangeText, placeholder, multiline = false, disabled = false, secureTextEntry = false }: {
+export function Field({ label, value, onChangeText, placeholder, multiline = false, disabled = false, secureTextEntry = false, autoComplete, keyboardType }: {
   label: string; value: string; onChangeText: (value: string) => void; placeholder?: string; multiline?: boolean; disabled?: boolean; secureTextEntry?: boolean;
+  autoComplete?: React.ComponentProps<typeof TextInput>['autoComplete']; keyboardType?: React.ComponentProps<typeof TextInput>['keyboardType'];
 }) {
   return <View style={ui.field}><Text style={ui.label}>{label}</Text>
-    <TextInput accessibilityLabel={label} value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor="#64748B" autoCapitalize="none" editable={!disabled} multiline={multiline} secureTextEntry={secureTextEntry} style={[ui.input, multiline && { minHeight: 90 }]} />
+    <TextInput accessibilityLabel={label} value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor="#64748B" autoCapitalize="none" autoComplete={autoComplete} keyboardType={keyboardType} editable={!disabled} multiline={multiline} secureTextEntry={secureTextEntry} style={[ui.input, multiline && { minHeight: 90 }]} />
   </View>;
 }
 
@@ -124,9 +127,10 @@ export const ui = StyleSheet.create({
   header: { width: '100%', maxWidth: 680, alignSelf: 'center', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', columnGap: 12, paddingHorizontal: 16, paddingVertical: 10 },
   headerIdentity: { flexBasis: 232, flexGrow: 1, flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
   brand: { fontSize: 26, color: '#54EF60', fontWeight: '800', letterSpacing: -0.6, flexShrink: 1 },
-  userInfo: { flex: 1, minWidth: 0 },
+  userInfo: { flexShrink: 1, minWidth: 0, minHeight: 44, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: '#B8D6FF' },
   userName: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
   userProfile: { color: '#E5EDFF', fontSize: 12 },
+  accountLink: { color: '#FFFFFF', fontSize: 12, fontWeight: '700', textDecorationLine: 'underline' },
   content: { width: '100%', maxWidth: 680, alignSelf: 'center', padding: 24, gap: 14, flexGrow: 1 },
   title: { fontSize: 28, color: BLUE, fontWeight: '700', marginVertical: 8 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },

@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/auth';
 import { useApiResource } from '@/hooks/use-api-resource';
 import { carregarLixeira, detalhesLixeira, operarLixeira } from '@/services/jornadas';
 import { dinheiro, formatarData, horarioFormulario } from '@/utils/jornadas';
-import { History } from './journey-details';
+import { History, nomeAutor } from './journey-details';
 import { Button, JourneyShell, ResourceState, ui } from './journey-ui';
 
 export default function LixeiraScreen() {
@@ -81,7 +81,7 @@ export default function LixeiraScreen() {
           <Text style={ui.text}>Função: {data.funcoes.find((f) => f.id === j.funcao_id)?.nome ?? `#${j.funcao_id}`}</Text>
           <Text style={ui.text}>Setor: {data.setores.find((s) => s.id === j.setor_id)?.nome ?? `#${j.setor_id}`}</Text>
           <Text style={ui.text}>Valor/hora histórico: {dinheiro(j.valor_hora)}</Text>
-          <Text style={ui.text}>Enviada à lixeira em {horarioFormulario(j.excluida_em)} · Usuário #{j.excluida_por}</Text>
+          <Text style={ui.text}>Enviada à lixeira em {horarioFormulario(j.excluida_em)} · {nomeAutor(j.excluida_por_usuario)}</Text>
           <Button label={checked ? '✓ Selecionada — desmarcar' : 'Selecionar jornada'} secondary={!checked}
             disabled={pending || detailLoading || (!checked && selectedIds.length >= 50)}
             onPress={() => setSelectedIds((ids) => checked ? ids.filter((id) => id !== j.id) : [...ids, j.id])} />
