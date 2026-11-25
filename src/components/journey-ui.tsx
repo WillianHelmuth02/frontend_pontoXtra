@@ -42,29 +42,39 @@ export function AppHeader({ nome, perfil, busy = false }: {
     else if (pathname !== home) router.replace(home);
   }
 
+  const backButton = (canGoBack || pathname !== home) && (
+    <Pressable accessibilityRole="button" accessibilityLabel="Voltar" disabled={busy}
+      onPress={voltar} style={({ pressed }) => [ui.headerBack, (pressed || busy) && ui.dim]}>
+      <View aria-hidden><SymbolView name={{ ios: 'arrow.left', android: 'arrow_back', web: 'arrow_back' }} size={22} tintColor="#FFFFFF" /></View>
+    </Pressable>
+  );
+
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={ui.blue}>
-      <View style={[ui.header, wide && ui.expanded, short && ui.headerShort]}>
-        <View style={ui.headerIdentity}>
-          <View>
-            <Text style={ui.brand}>PontoXtra</Text>
-            {(canGoBack || pathname !== home) && (
-              <Pressable accessibilityRole="button" accessibilityLabel="Voltar" disabled={busy}
-                onPress={voltar} style={({ pressed }) => [ui.headerBack, (pressed || busy) && ui.dim]}>
-                <Text style={ui.headerBackText}>← Voltar</Text>
-              </Pressable>
-            )}
+      <View style={[ui.header, wide && ui.headerWide, short && ui.headerShort]}>
+        <View style={[ui.headerRow, wide && ui.headerMainWide]}>
+          {wide && backButton}
+          <Text style={ui.brand}>PontoXtra</Text>
+          <View style={ui.headerRow}>
+            <FontSizeControl onBlue />
+            <NotificationLink />
           </View>
+        </View>
+        <View style={[ui.headerRow, wide && ui.headerAccountWide]}>
+          {!wide && backButton}
           <Pressable accessibilityRole="button" accessibilityLabel={`Minha conta de ${nome}, ${PERFIS[perfil]}`}
             onPress={() => router.navigate('/minha-conta')} style={({ pressed }) => [ui.userInfo, pressed && ui.dim]}>
-            <Text numberOfLines={2} style={ui.userName}>{nome}</Text>
-            <Text style={ui.userProfile}>{PERFIS[perfil]}</Text>
-            <Text style={ui.accountLink}>Minha conta ›</Text>
+            <View aria-hidden>
+              <SymbolView name={{ ios: 'person.crop.circle', android: 'account_circle', web: 'account_circle' }} size={24} tintColor="#FFFFFF" />
+            </View>
+            <View style={ui.userDetails}>
+              <Text numberOfLines={1} style={ui.userName}>{nome}</Text>
+              <Text style={ui.userProfile}>{PERFIS[perfil]}</Text>
+            </View>
+            <View aria-hidden>
+              <SymbolView name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }} size={18} tintColor="#E5EDFF" />
+            </View>
           </Pressable>
-        </View>
-        <View style={ui.headerActions}>
-          <FontSizeControl onBlue />
-          <NotificationLink />
         </View>
       </View>
     </SafeAreaView>
@@ -160,16 +170,17 @@ export const ui = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#F5F5FF' }, blue: { backgroundColor: BLUE },
   fill: { flex: 1 }, expanded: { maxWidth: maxAppWidth },
   headerShort: { paddingVertical: 4 },
-  header: { width: '100%', maxWidth: 680, alignSelf: 'center', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', columnGap: 12, paddingHorizontal: 16, paddingVertical: 10 },
-  headerIdentity: { flexBasis: 232, flexGrow: 1, flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  brand: { fontSize: 26, color: '#54EF60', fontWeight: '800', letterSpacing: -0.6, flexShrink: 1 },
-  headerBack: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingRight: 12 },
-  headerBackText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  userInfo: { flexShrink: 1, minWidth: 0, minHeight: 44, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: '#B8D6FF' },
+  header: { width: '100%', maxWidth: 680, alignSelf: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 8 },
+  headerWide: { maxWidth: maxAppWidth, flexDirection: 'row', alignItems: 'center', gap: 16 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerMainWide: { flex: 1, minWidth: 0 },
+  headerAccountWide: { width: '32%', maxWidth: 320 },
+  brand: { flex: 1, minWidth: 0, fontSize: 26, color: '#54EF60', fontWeight: '800', letterSpacing: -0.6 },
+  headerBack: { width: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 8, backgroundColor: '#004999' },
+  userInfo: { flex: 1, minWidth: 0, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 8, backgroundColor: '#004999' },
+  userDetails: { flex: 1, minWidth: 0 },
   userName: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
   userProfile: { color: '#E5EDFF', fontSize: 12 },
-  accountLink: { color: '#FFFFFF', fontSize: 12, fontWeight: '700', textDecorationLine: 'underline' },
   content: { width: '100%', maxWidth: 680, alignSelf: 'center', padding: 24, gap: 14, flexGrow: 1 },
   reportContent: { paddingHorizontal: 16 }, shortContent: { paddingVertical: 12 },
   title: { fontSize: 28, color: BLUE, fontWeight: '700', marginVertical: 8 },

@@ -4,7 +4,7 @@ Revisão consolidada de 28/10/2026: esta tela e relatórios estão implementados
 
 No painel ADM, **Gerenciar usuários** abre `/usuarios`. Demais perfis retornam ao início sem carregar a lista. A API também exige ADMINISTRADOR em todas as rotas de usuários.
 
-Em qualquer tela de trabalho autenticada, toque no nome ou em **Minha conta** no cabeçalho. Operacional, RH e ADM podem atualizar o próprio nome, e-mail e senha. A tela exibe o perfil de acesso. Para mudar o e-mail ou a senha, confirme a senha atual e entre novamente após salvar.
+Em qualquer tela de trabalho autenticada, toque no cartão com seu nome e perfil no cabeçalho para abrir **Minha conta**. Operacional, RH e ADM podem atualizar o próprio nome, e-mail e senha. A tela exibe o perfil de acesso. Para mudar o e-mail ou a senha, confirme a senha atual e entre novamente após salvar.
 
 Consulta com busca por nome/e-mail e filtros ativos/inativos/todos. Criação com nome (até 120 caracteres), e-mail (até 180), perfil e senha confirmada (8 a 128 caracteres). O formulário mascara a senha e limpa os campos de senha ao ser fechado. Na edição, deixar ambos os campos de senha vazios mantém a senha atual.
 
