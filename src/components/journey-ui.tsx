@@ -2,11 +2,14 @@ import { Redirect, router, useCanGoBack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SymbolView } from 'expo-symbols';
 import type { PropsWithChildren } from 'react';
-import { ActivityIndicator, FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Text, TextInput } from '@/components/app-text';
 import { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/auth';
 import { NotificationLink } from '@/components/notification-link';
+import { FontSizeControl } from '@/components/font-size-control';
+import { useFontSize } from '@/contexts/font-size';
 
 export const BLUE = '#005BCC';
 export const PERFIS = { OPERACIONAL: 'Operacional', RH: 'RH', ADMINISTRADOR: 'Administrador' };
@@ -56,7 +59,10 @@ export function AppHeader({ nome, perfil, busy = false }: {
             <Text style={ui.accountLink}>Minha conta ›</Text>
           </Pressable>
         </View>
-        <NotificationLink />
+        <View style={ui.headerActions}>
+          <FontSizeControl onBlue />
+          <NotificationLink />
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -66,6 +72,9 @@ export function JourneyShell({ title, titleIcon, wide, children, busy = false }:
   title: string; wide?: boolean; titleIcon?: keyof typeof JOURNEY_ICONS; busy?: boolean;
 }>) {
   const { usuario } = useAuth();
+  const { size } = useFontSize();
+  const { width } = useWindowDimensions();
+  const wrapFooter = size === 'Grande' && width < 440;
   if (!usuario) return <Redirect href="/login" />;
   return <View style={ui.screen}>
     <StatusBar style="light" />
@@ -79,20 +88,20 @@ export function JourneyShell({ title, titleIcon, wide, children, busy = false }:
       ) : <Text accessibilityRole="header" style={ui.title}>{title}</Text>}
       {children}
     </ScrollView>
-    <SafeAreaView edges={['bottom']} style={ui.blue}><View style={ui.footer}>
-      <Button label="INÍCIO" disabled={busy} onPress={() => router.replace('/session')} footer />
-      <Button label="JORNADAS" disabled={busy} onPress={() => router.replace('/jornadas')} footer />
-      <Button label="RELATÓRIOS" disabled={busy} onPress={() => router.push('/relatorios')} footer />
-      <Button label="SAIR" disabled={busy} onPress={() => router.push('/logout')} footer />
+    <SafeAreaView edges={['bottom']} style={ui.blue}><View style={[ui.footer, wrapFooter && ui.footerWrapped]}>
+      <Button label="INÍCIO" disabled={busy} onPress={() => router.replace('/session')} footer wrapped={wrapFooter} />
+      <Button label="JORNADAS" disabled={busy} onPress={() => router.replace('/jornadas')} footer wrapped={wrapFooter} />
+      <Button label="RELATÓRIOS" disabled={busy} onPress={() => router.push('/relatorios')} footer wrapped={wrapFooter} />
+      <Button label="SAIR" disabled={busy} onPress={() => router.push('/logout')} footer wrapped={wrapFooter} />
     </View></SafeAreaView>
   </View>;
 }
 
-export function Button({ label, onPress, disabled, secondary, danger, footer }: {
-  label: string; onPress: () => void; disabled?: boolean; secondary?: boolean; danger?: boolean; footer?: boolean;
+export function Button({ label, onPress, disabled, secondary, danger, footer, wrapped }: {
+  label: string; onPress: () => void; disabled?: boolean; secondary?: boolean; danger?: boolean; footer?: boolean; wrapped?: boolean;
 }) {
   return <Pressable accessibilityRole="button" accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress}
-    style={({ pressed }) => [footer ? ui.footerButton : ui.button, secondary && ui.secondary, danger && ui.danger, (disabled || pressed) && ui.dim]}>
+    style={({ pressed }) => [footer ? ui.footerButton : ui.button, wrapped && ui.footerButtonWrapped, secondary && ui.secondary, danger && ui.danger, (disabled || pressed) && ui.dim]}>
     <Text style={[ui.buttonText, secondary && ui.secondaryText]}>{label}</Text>
   </Pressable>;
 }
@@ -145,6 +154,7 @@ export const ui = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#F5F5FF' }, blue: { backgroundColor: BLUE },
   header: { width: '100%', maxWidth: 680, alignSelf: 'center', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', columnGap: 12, paddingHorizontal: 16, paddingVertical: 10 },
   headerIdentity: { flexBasis: 232, flexGrow: 1, flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   brand: { fontSize: 26, color: '#54EF60', fontWeight: '800', letterSpacing: -0.6, flexShrink: 1 },
   headerBack: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingRight: 12 },
   headerBackText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
@@ -169,5 +179,7 @@ export const ui = StyleSheet.create({
   error: { color: '#B42318', lineHeight: 23 }, notice: { color: '#17643F', lineHeight: 23 },
   footer: { flexDirection: 'row', maxWidth: 680, width: '100%', alignSelf: 'center' },
   footerButton: { flex: 1, paddingVertical: 20, alignItems: 'center', justifyContent: 'center' },
+  footerWrapped: { flexWrap: 'wrap' },
+  footerButtonWrapped: { flexBasis: '50%', minHeight: 44, paddingVertical: 8 },
   row: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
 });

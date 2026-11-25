@@ -1,6 +1,7 @@
 import { Redirect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { Modal, ScrollView, Text, View } from 'react-native';
+import { Modal, ScrollView, View } from 'react-native';
+import { Text } from '@/components/app-text';
 import { useAuth } from '@/contexts/auth';
 import { useApiResource } from '@/hooks/use-api-resource';
 import { api } from '@/services/api';

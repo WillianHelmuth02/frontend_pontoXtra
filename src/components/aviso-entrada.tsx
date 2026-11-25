@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Text } from 'react-native';
+import { Text } from '@/components/app-text';
 import { avisoPontualidade, type Jornada } from '@/utils/jornadas';
 
 export function AvisoEntrada({ jornada }: { jornada: Jornada }) {

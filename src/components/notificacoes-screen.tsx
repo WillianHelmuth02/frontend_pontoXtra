@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from '@/components/app-text';
 import { router } from 'expo-router';
 import { useNotificacoes, type Aviso, type ListaAvisos } from '@/contexts/notificacoes';
 import { useAuth } from '@/contexts/auth';

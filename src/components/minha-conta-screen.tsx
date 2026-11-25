@@ -1,6 +1,7 @@
 import { Redirect } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from '@/components/app-text';
 import { useAuth } from '@/contexts/auth';
 import { dadosPessoais, SENHA_MIN, SENHA_MAX, type UsuarioCadastro } from '@/utils/usuarios';
 import { Button, Field, JourneyShell, PERFIS, ui } from './journey-ui';

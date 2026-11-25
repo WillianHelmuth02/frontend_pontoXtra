@@ -3,7 +3,9 @@ import { Redirect, router } from 'expo-router';
 import { useAuth } from '@/contexts/auth';
 import { StatusBar } from 'expo-status-bar';
 import { useRef, useState, type ElementRef } from 'react';
-import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '@/components/app-text';
+import { FontSizeControl } from '@/components/font-size-control';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 /**
@@ -76,6 +78,7 @@ export default function LoginScreen() {
         <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
           <ScrollView ref={rolagem} bounces={false} contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled" onKeyboardDidShow={mostrarCampoAtivo} onLayout={mostrarCampoAtivo}>
+            <View style={styles.fontControl}><FontSizeControl /></View>
             {/* Cartão branco sobreposto ao painel. contentFit preserva a marca
                 inteira e sua proporção, sem recortar o arquivo original. */}
             <View style={styles.logoCard}>
@@ -121,6 +124,7 @@ const styles = StyleSheet.create({
   header: { ...StyleSheet.absoluteFill, height: 365, backgroundColor: '#00651F', overflow: 'hidden' },
   circle: { position: 'absolute', borderRadius: 999 },
   keyboardAvoidingView: { flex: 1 }, safeArea: { flex: 1 }, scrollContent: { flexGrow: 1, paddingTop: 106 },
+  fontControl: { position: 'absolute', top: 16, right: 20 },
   logoCard: { alignSelf: 'center', alignItems: 'center', justifyContent: 'center', width: 280, height: 280, borderRadius: 17, backgroundColor: '#FFFFFF', shadowColor: '#00245B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3, zIndex: 1 },
   logo: { width: 255, height: 255 },
   formPanel: { flex: 1, minHeight: 440, marginTop: -76, paddingTop: 159, paddingBottom: 32, paddingHorizontal: 32, alignItems: 'center', borderTopLeftRadius: 52, borderTopRightRadius: 52, backgroundColor: '#F1F1F1' },

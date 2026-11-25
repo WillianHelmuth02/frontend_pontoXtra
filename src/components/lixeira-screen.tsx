@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
-import { Modal, Text, View } from 'react-native';
+import { Modal, View } from 'react-native';
+import { Text } from '@/components/app-text';
 import { useAuth } from '@/contexts/auth';
 import { useApiResource } from '@/hooks/use-api-resource';
 import { carregarLixeira, detalhesLixeira, operarLixeira } from '@/services/jornadas';

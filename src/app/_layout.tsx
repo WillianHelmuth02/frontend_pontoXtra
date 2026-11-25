@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 import { AuthProvider } from '@/contexts/auth';
+import { FontSizeProvider } from '@/contexts/font-size';
 import { NotificacoesProvider } from '@/contexts/notificacoes';
 
 /**
@@ -10,5 +11,5 @@ import { NotificacoesProvider } from '@/contexts/notificacoes';
  */
 export default function RootLayout() {
   // O provider fica acima do navegador para manter a sessão ao trocar de tela.
-  return <AuthProvider><NotificacoesProvider><Stack screenOptions={{ headerShown: false }} /></NotificacoesProvider></AuthProvider>;
+  return <FontSizeProvider><AuthProvider><NotificacoesProvider><Stack screenOptions={{ headerShown: false }} /></NotificacoesProvider></AuthProvider></FontSizeProvider>;
 }

@@ -3,7 +3,8 @@ import { Redirect } from 'expo-router';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/auth';
 import { StatusBar } from 'expo-status-bar';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/app-text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppHeader } from '@/components/journey-ui';
 

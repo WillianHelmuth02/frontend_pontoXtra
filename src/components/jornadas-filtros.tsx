@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Keyboard, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Keyboard, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '@/components/app-text';
 import { FILTROS_VAZIOS, ORDENS_JORNADAS, STATUS_LABELS, queryJornadas, type FiltrosJornadas, type OrdemJornadas, type StatusJornada } from '@/utils/jornadas';
 import { BLUE, Button, ui } from './journey-ui';
 
