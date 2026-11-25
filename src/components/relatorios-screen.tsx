@@ -42,6 +42,7 @@ function Indicador({ label, value, destaque }: { label: string; value: string; d
 type Barra = { id: string; nome: string; quantidade: string };
 type Visualizacao = 'Barras' | 'Pizza';
 const paleta = ['#007C78', '#3973CC', '#7558A6', '#B84F22', '#21648D', '#A73770', '#68798B'];
+const coresSetores = ['#1768AC', '#A13A83', '#007C68', '#BF561A', '#6742A0', '#7B640D', '#A6363D', '#335B74'];
 
 function ponto(angulo: number) {
   return `${80 + 76 * Math.cos(angulo)} ${80 + 76 * Math.sin(angulo)}`;
@@ -89,8 +90,9 @@ function Pizza({ linhas, selecionar }: { linhas: Barra[]; selecionar: (id: strin
   </>;
 }
 
-function Grafico({ titulo, linhas, cor, visualizacao, selecionar }: {
-  titulo: string; linhas: Barra[]; cor: string; visualizacao: Visualizacao; selecionar: (id: string) => void;
+function Grafico({ titulo, linhas, cor, coresPorId, visualizacao, selecionar }: {
+  titulo: string; linhas: Barra[]; cor: string; coresPorId?: ReadonlyMap<string, string>;
+  visualizacao: Visualizacao; selecionar: (id: string) => void;
 }) {
   const [expandido, setExpandido] = useState(false);
   const maximo = linhas.reduce((max, l) => Math.max(max, Number(l.quantidade)), 1);
@@ -102,7 +104,7 @@ function Grafico({ titulo, linhas, cor, visualizacao, selecionar }: {
       accessibilityLabel={'Filtrar por ' + l.nome + ', ' + l.quantidade + ' jornadas'} onPress={() => selecionar(l.id)}
       style={({ pressed }) => [s.barRow, pressed && ui.dim]}>
       <View style={s.line}><Text style={s.barLabel}>{l.nome}</Text><Text style={s.count}>{l.quantidade}</Text></View>
-      <View style={s.track}><View style={{ height: 7, borderRadius: 4, backgroundColor: cor, width: `${100 * Number(l.quantidade) / maximo}%` }} /></View>
+      <View style={s.track}><View style={{ height: 7, borderRadius: 4, backgroundColor: coresPorId?.get(l.id) ?? cor, width: `${100 * Number(l.quantidade) / maximo}%` }} /></View>
     </Pressable>)}
     {visualizacao === 'Barras' && linhas.length > 6 && <Chip label={expandido ? 'Ver menos' : 'Ver todos (' + linhas.length + ')'} onPress={() => setExpandido(!expandido)} />}
   </View>;
@@ -124,6 +126,9 @@ function Painel({ adm }: { adm: boolean }) {
   const loader = useCallback(() => carregarRelatorio(filtros, pagina, adm), [filtros, pagina, adm]);
   const resource = useApiResource(loader, true);
   const setores = useApiResource(useCallback(() => api<CadastroResumo[]>('/setores'), []), true);
+  const coresPorSetor = new Map(setores.data?.map((setor, indice) => [
+    setor.id, coresSetores[indice % coresSetores.length],
+  ]));
   const dados = resource.fresh && resource.data?.chave === JSON.stringify([filtros, pagina]) ? resource.data : null;
   function aplicar(next: FiltrosRelatorio) {
     try {
@@ -201,7 +206,8 @@ function Painel({ adm }: { adm: boolean }) {
         )}</View>
       </View>
       <View style={s.controls}>
-        <Grafico visualizacao={visualizacao} titulo="Jornadas por setor" linhas={dados.distribuicoes.por_setor} cor="#007C78" selecionar={id => aplicar({ ...filtros, setor_id: id })} />
+        <Grafico visualizacao={visualizacao} titulo="Jornadas por setor" linhas={dados.distribuicoes.por_setor} cor="#007C78" coresPorId={coresPorSetor}
+          selecionar={id => aplicar({ ...filtros, setor_id: id })} />
         <Grafico visualizacao={visualizacao} titulo="Volume por mês" cor="#3973CC" linhas={dados.distribuicoes.por_mes.map(l => ({
           id: l.mes, nome: l.mes.split('-').reverse().join('/'), quantidade: l.quantidade,
         }))} selecionar={isolarMes} />

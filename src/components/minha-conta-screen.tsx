@@ -1,4 +1,4 @@
-import { Redirect, router } from 'expo-router';
+import { Redirect } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useAuth } from '@/contexts/auth';
@@ -69,6 +69,5 @@ function FormularioConta({ usuario }: { usuario: UsuarioCadastro }) {
     {!!erro && <Text accessibilityRole="alert" style={ui.error}>{erro}</Text>}
     {!!aviso && <Text accessibilityLiveRegion="polite" style={ui.notice}>{aviso}</Text>}
     <Button label={salvando ? 'Salvando…' : 'Salvar alterações'} onPress={salvar} disabled={salvando} />
-    <Button label="Voltar" secondary disabled={salvando} onPress={() => router.canGoBack() ? router.back() : router.replace('/session')} />
   </JourneyShell>;
 }

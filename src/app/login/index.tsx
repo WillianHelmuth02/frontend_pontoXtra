@@ -2,8 +2,8 @@ import { Image } from 'expo-image';
 import { Redirect, router } from 'expo-router';
 import { useAuth } from '@/contexts/auth';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useRef, useState, type ElementRef } from 'react';
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 /**
@@ -38,7 +38,18 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
+  const rolagem = useRef<ElementRef<typeof ScrollView>>(null);
+  const campoEmail = useRef<ElementRef<typeof TextInput>>(null);
+  const campoSenha = useRef<ElementRef<typeof TextInput>>(null);
   const { usuario, login } = useAuth();
+
+  function mostrarCampoAtivo() {
+    if (Platform.OS === 'web' || !Keyboard.isVisible()) return;
+    requestAnimationFrame(() => {
+      const campo = campoSenha.current?.isFocused() ? campoSenha.current : campoEmail.current;
+      if (campo?.isFocused()) rolagem.current?.scrollResponderScrollNativeHandleToKeyboard(campo, 40, true);
+    });
+  }
 
   // Evita novo envio durante a requisição. A senha não recebe trim: espaços
   // podem fazer parte da credencial. A validação definitiva ocorre no backend.
@@ -61,11 +72,10 @@ export default function LoginScreen() {
       <View pointerEvents="none" style={styles.header}>
         {circles.map((circle, index) => <View key={index} style={[styles.circle, circle]} />)}
       </View>
-      {/* No iOS, abre espaço para o teclado. A rolagem permite alcançar os campos
-          em telas menores; keyboardShouldPersistTaps mantém os botões acessíveis. */}
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardAvoidingView}>
-        <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <ScrollView bounces={false} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'web' ? undefined : 'padding'} style={styles.keyboardAvoidingView}>
+        <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+          <ScrollView ref={rolagem} bounces={false} contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled" onKeyboardDidShow={mostrarCampoAtivo} onLayout={mostrarCampoAtivo}>
             {/* Cartão branco sobreposto ao painel. contentFit preserva a marca
                 inteira e sua proporção, sem recortar o arquivo original. */}
             <View style={styles.logoCard}>
@@ -77,11 +87,16 @@ export default function LoginScreen() {
               <View style={styles.fields}>
                 <View>
                   <Text style={styles.label}>E-MAIL</Text>
-                  <TextInput accessibilityLabel="E-mail" autoCapitalize="none" autoCorrect={false} keyboardType="email-address" autoComplete="email" onChangeText={setEmail} placeholder="Seu e-mail" placeholderTextColor="#666666" style={styles.input} value={email} editable={!pending} />
+                  <TextInput ref={campoEmail} accessibilityLabel="E-mail" autoCapitalize="none" autoCorrect={false}
+                    keyboardType="email-address" autoComplete="email" returnKeyType="next" submitBehavior="submit"
+                    onSubmitEditing={() => campoSenha.current?.focus()} onFocus={mostrarCampoAtivo}
+                    onChangeText={setEmail} placeholder="Seu e-mail" placeholderTextColor="#666666" style={styles.input} value={email} editable={!pending} />
                 </View>
                 <View>
                   <Text style={styles.label}>SENHA</Text>
-                  <TextInput autoComplete="password" onChangeText={setPassword} placeholder="••••••••" placeholderTextColor="#666666" secureTextEntry style={styles.input} value={password} />
+                  <TextInput ref={campoSenha} accessibilityLabel="Senha" autoComplete="password" returnKeyType="done"
+                    onFocus={mostrarCampoAtivo} onSubmitEditing={submit} onChangeText={setPassword}
+                    placeholder="••••••••" placeholderTextColor="#666666" secureTextEntry style={styles.input} value={password} editable={!pending} />
                 </View>
                 {error ? <Text accessibilityRole="alert" style={{ color: '#B42318' }}>{error}</Text> : null}
                 {/* Desabilitar o botão também impede envios duplicados por toque. */}
@@ -108,7 +123,7 @@ const styles = StyleSheet.create({
   keyboardAvoidingView: { flex: 1 }, safeArea: { flex: 1 }, scrollContent: { flexGrow: 1, paddingTop: 106 },
   logoCard: { alignSelf: 'center', alignItems: 'center', justifyContent: 'center', width: 280, height: 280, borderRadius: 17, backgroundColor: '#FFFFFF', shadowColor: '#00245B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3, zIndex: 1 },
   logo: { width: 255, height: 255 },
-  formPanel: { flex: 1, minHeight: 440, marginTop: -76, paddingTop: 159, paddingHorizontal: 32, alignItems: 'center', borderTopLeftRadius: 52, borderTopRightRadius: 52, backgroundColor: '#F1F1F1' },
+  formPanel: { flex: 1, minHeight: 440, marginTop: -76, paddingTop: 159, paddingBottom: 32, paddingHorizontal: 32, alignItems: 'center', borderTopLeftRadius: 52, borderTopRightRadius: 52, backgroundColor: '#F1F1F1' },
   title: { color: '#1E2424', fontSize: 46, fontWeight: '800', letterSpacing: -1.5 },
   fields: { alignSelf: 'stretch', marginTop: 45, gap: 13 },
   label: { marginLeft: 3, marginBottom: 5, color: '#606060', fontSize: 12, fontWeight: '500', letterSpacing: 2.1 },

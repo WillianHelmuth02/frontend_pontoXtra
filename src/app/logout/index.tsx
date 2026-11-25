@@ -43,7 +43,7 @@ export default function LogoutScreen() {
   return (
     <View style={styles.screen}>
       <StatusBar style="light" />
-      <AppHeader nome={usuario.nome} perfil={usuario.perfil} />
+      <AppHeader nome={usuario.nome} perfil={usuario.perfil} busy={pending} />
       {/* A rolagem mantém o botão alcançável em aparelhos com pouca altura útil. */}
       <ScrollView bounces={false} contentContainerStyle={styles.content}>
         {/* Fundo sem interação; overflow no cabeçalho recorta as formas nas bordas. */}

@@ -1,4 +1,4 @@
-import { Redirect, router } from 'expo-router';
+import { Redirect, router, useCanGoBack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SymbolView } from 'expo-symbols';
 import type { PropsWithChildren } from 'react';
@@ -24,12 +24,31 @@ export function JourneyIcon({ icon, size = 20 }: { icon: keyof typeof JOURNEY_IC
   return <View aria-hidden><SymbolView name={JOURNEY_ICONS[icon]} size={size} tintColor={BLUE} /></View>;
 }
 
-export function AppHeader({ nome, perfil }: { nome: string; perfil: keyof typeof PERFIS }) {
+export function AppHeader({ nome, perfil, busy = false }: {
+  nome: string; perfil: keyof typeof PERFIS; busy?: boolean;
+}) {
+  const pathname = usePathname();
+  const canGoBack = useCanGoBack();
+  const home = perfil === 'OPERACIONAL' ? '/jornadas' : '/session';
+
+  function voltar() {
+    if (router.canGoBack()) router.back();
+    else if (pathname !== home) router.replace(home);
+  }
+
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={ui.blue}>
       <View style={ui.header}>
         <View style={ui.headerIdentity}>
-          <Text style={ui.brand}>PontoXtra</Text>
+          <View>
+            <Text style={ui.brand}>PontoXtra</Text>
+            {(canGoBack || pathname !== home) && (
+              <Pressable accessibilityRole="button" accessibilityLabel="Voltar" disabled={busy}
+                onPress={voltar} style={({ pressed }) => [ui.headerBack, (pressed || busy) && ui.dim]}>
+                <Text style={ui.headerBackText}>← Voltar</Text>
+              </Pressable>
+            )}
+          </View>
           <Pressable accessibilityRole="button" accessibilityLabel={`Minha conta de ${nome}, ${PERFIS[perfil]}`}
             onPress={() => router.navigate('/minha-conta')} style={({ pressed }) => [ui.userInfo, pressed && ui.dim]}>
             <Text numberOfLines={2} style={ui.userName}>{nome}</Text>
@@ -50,7 +69,7 @@ export function JourneyShell({ title, titleIcon, wide, children, busy = false }:
   if (!usuario) return <Redirect href="/login" />;
   return <View style={ui.screen}>
     <StatusBar style="light" />
-    <AppHeader nome={usuario.nome} perfil={usuario.perfil} />
+    <AppHeader nome={usuario.nome} perfil={usuario.perfil} busy={busy} />
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[ui.content, wide && { maxWidth: 1240, paddingHorizontal: 16 }]}>
       {titleIcon ? (
         <View style={ui.titleRow}>
@@ -127,6 +146,8 @@ export const ui = StyleSheet.create({
   header: { width: '100%', maxWidth: 680, alignSelf: 'center', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', columnGap: 12, paddingHorizontal: 16, paddingVertical: 10 },
   headerIdentity: { flexBasis: 232, flexGrow: 1, flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
   brand: { fontSize: 26, color: '#54EF60', fontWeight: '800', letterSpacing: -0.6, flexShrink: 1 },
+  headerBack: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingRight: 12 },
+  headerBackText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
   userInfo: { flexShrink: 1, minWidth: 0, minHeight: 44, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: '#B8D6FF' },
   userName: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
   userProfile: { color: '#E5EDFF', fontSize: 12 },

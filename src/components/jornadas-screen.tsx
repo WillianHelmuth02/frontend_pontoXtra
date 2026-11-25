@@ -166,7 +166,7 @@ export function JornadasScreen() {
   return (
     <View style={styles.screen}>
       <StatusBar style="light" />
-      <AppHeader nome={usuario.nome} perfil={usuario.perfil} />
+      <AppHeader nome={usuario.nome} perfil={usuario.perfil} busy={pending} />
       <View style={styles.body}>
         <FlatList
           data={fresh ? visible : []}
