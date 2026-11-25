@@ -1,8 +1,9 @@
+import { AppModal } from '@/components/app-modal';
 import { Redirect, router, useCanGoBack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SymbolView } from 'expo-symbols';
 import type { PropsWithChildren } from 'react';
-import { ActivityIndicator, FlatList, Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text, TextInput } from '@/components/app-text';
 import { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,6 +11,7 @@ import { useAuth } from '@/contexts/auth';
 import { NotificationLink } from '@/components/notification-link';
 import { FontSizeControl } from '@/components/font-size-control';
 import { useFontSize } from '@/contexts/font-size';
+import { maxAppWidth, useAppLayout } from '@/hooks/use-app-layout';
 
 export const BLUE = '#005BCC';
 export const PERFIS = { OPERACIONAL: 'Operacional', RH: 'RH', ADMINISTRADOR: 'Administrador' };
@@ -32,6 +34,7 @@ export function AppHeader({ nome, perfil, busy = false }: {
 }) {
   const pathname = usePathname();
   const canGoBack = useCanGoBack();
+  const { wide, short } = useAppLayout();
   const home = perfil === 'OPERACIONAL' ? '/jornadas' : '/session';
 
   function voltar() {
@@ -41,7 +44,7 @@ export function AppHeader({ nome, perfil, busy = false }: {
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={ui.blue}>
-      <View style={ui.header}>
+      <View style={[ui.header, wide && ui.expanded, short && ui.headerShort]}>
         <View style={ui.headerIdentity}>
           <View>
             <Text style={ui.brand}>PontoXtra</Text>
@@ -74,34 +77,37 @@ export function JourneyShell({ title, titleIcon, wide, children, busy = false }:
   const { usuario } = useAuth();
   const { size } = useFontSize();
   const { width } = useWindowDimensions();
+  const layout = useAppLayout();
   const wrapFooter = size === 'Grande' && width < 440;
   if (!usuario) return <Redirect href="/login" />;
   return <View style={ui.screen}>
     <StatusBar style="light" />
     <AppHeader nome={usuario.nome} perfil={usuario.perfil} busy={busy} />
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[ui.content, wide && { maxWidth: 1240, paddingHorizontal: 16 }]}>
-      {titleIcon ? (
-        <View style={ui.titleRow}>
-          <View style={ui.titleIcon}><JourneyIcon icon={titleIcon} size={24} /></View>
-          <Text accessibilityRole="header" style={[ui.title, ui.titleWithIcon]}>{title}</Text>
-        </View>
-      ) : <Text accessibilityRole="header" style={ui.title}>{title}</Text>}
-      {children}
-    </ScrollView>
-    <SafeAreaView edges={['bottom']} style={ui.blue}><View style={[ui.footer, wrapFooter && ui.footerWrapped]}>
-      <Button label="INÍCIO" disabled={busy} onPress={() => router.replace('/session')} footer wrapped={wrapFooter} />
-      <Button label="JORNADAS" disabled={busy} onPress={() => router.replace('/jornadas')} footer wrapped={wrapFooter} />
-      <Button label="RELATÓRIOS" disabled={busy} onPress={() => router.push('/relatorios')} footer wrapped={wrapFooter} />
-      <Button label="SAIR" disabled={busy} onPress={() => router.push('/logout')} footer wrapped={wrapFooter} />
+    <SafeAreaView edges={['left', 'right']} style={ui.fill}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[ui.content, wide && ui.reportContent, (layout.wide || wide) && ui.expanded, layout.short && ui.shortContent]}>
+        {titleIcon ? (
+          <View style={ui.titleRow}>
+            <View style={ui.titleIcon}><JourneyIcon icon={titleIcon} size={24} /></View>
+            <Text accessibilityRole="header" style={[ui.title, ui.titleWithIcon]}>{title}</Text>
+          </View>
+        ) : <Text accessibilityRole="header" style={ui.title}>{title}</Text>}
+        {children}
+      </ScrollView>
+    </SafeAreaView>
+    <SafeAreaView edges={['bottom', 'left', 'right']} style={ui.blue}><View style={[ui.footer, layout.wide && ui.expanded, wrapFooter && ui.footerWrapped]}>
+      <Button label="INÍCIO" disabled={busy} onPress={() => router.replace('/session')} footer wrapped={wrapFooter} compact={layout.short} />
+      <Button label="JORNADAS" disabled={busy} onPress={() => router.replace('/jornadas')} footer wrapped={wrapFooter} compact={layout.short} />
+      <Button label="RELATÓRIOS" disabled={busy} onPress={() => router.push('/relatorios')} footer wrapped={wrapFooter} compact={layout.short} />
+      <Button label="SAIR" disabled={busy} onPress={() => router.push('/logout')} footer wrapped={wrapFooter} compact={layout.short} />
     </View></SafeAreaView>
   </View>;
 }
 
-export function Button({ label, onPress, disabled, secondary, danger, footer, wrapped }: {
-  label: string; onPress: () => void; disabled?: boolean; secondary?: boolean; danger?: boolean; footer?: boolean; wrapped?: boolean;
+export function Button({ label, onPress, disabled, secondary, danger, footer, wrapped, compact }: {
+  label: string; onPress: () => void; disabled?: boolean; secondary?: boolean; danger?: boolean; footer?: boolean; wrapped?: boolean; compact?: boolean;
 }) {
   return <Pressable accessibilityRole="button" accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress}
-    style={({ pressed }) => [footer ? ui.footerButton : ui.button, wrapped && ui.footerButtonWrapped, secondary && ui.secondary, danger && ui.danger, (disabled || pressed) && ui.dim]}>
+    style={({ pressed }) => [footer ? ui.footerButton : ui.button, compact && ui.compactButton, wrapped && ui.footerButtonWrapped, secondary && ui.secondary, danger && ui.danger, (disabled || pressed) && ui.dim]}>
     <Text style={[ui.buttonText, secondary && ui.secondaryText]}>{label}</Text>
   </Pressable>;
 }
@@ -132,8 +138,8 @@ export function CadastroPicker({ label, items, value, onChange, disabled }: {
   const [search, setSearch] = useState('');
   return <View style={ui.field}><Text style={ui.label}>{label}</Text>
     <Button secondary label={items.find((item) => item.id === value)?.nome ?? 'Selecionar'} disabled={disabled} onPress={() => { setSearch(''); setOpen(true); }} />
-    <Modal transparent visible={open} onRequestClose={() => setOpen(false)} animationType="fade">
-      <View style={{ flex: 1, backgroundColor: '#001B4266', padding: 24, alignItems: 'center', justifyContent: 'center' }}>
+    <AppModal transparent visible={open} onRequestClose={() => setOpen(false)} animationType="fade">
+      <View style={{ flex: 1, padding: 24, alignItems: 'center', justifyContent: 'center' }}>
         <View accessibilityViewIsModal style={{ backgroundColor: '#FFFFFF', width: '100%', maxWidth: 540, height: '80%', padding: 20, borderRadius: 16, gap: 14 }}>
           <Text accessibilityRole="header" style={ui.subtitle}>{label}</Text>
           <Field label="Buscar por nome" value={search} onChangeText={setSearch} />
@@ -143,7 +149,7 @@ export function CadastroPicker({ label, items, value, onChange, disabled }: {
           <Button secondary label="Fechar" onPress={() => setOpen(false)} />
         </View>
       </View>
-    </Modal>
+    </AppModal>
   </View>;
 }
 
@@ -152,6 +158,8 @@ export function CadastroPicker({ label, items, value, onChange, disabled }: {
  */
 export const ui = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#F5F5FF' }, blue: { backgroundColor: BLUE },
+  fill: { flex: 1 }, expanded: { maxWidth: maxAppWidth },
+  headerShort: { paddingVertical: 4 },
   header: { width: '100%', maxWidth: 680, alignSelf: 'center', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', columnGap: 12, paddingHorizontal: 16, paddingVertical: 10 },
   headerIdentity: { flexBasis: 232, flexGrow: 1, flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
@@ -163,6 +171,7 @@ export const ui = StyleSheet.create({
   userProfile: { color: '#E5EDFF', fontSize: 12 },
   accountLink: { color: '#FFFFFF', fontSize: 12, fontWeight: '700', textDecorationLine: 'underline' },
   content: { width: '100%', maxWidth: 680, alignSelf: 'center', padding: 24, gap: 14, flexGrow: 1 },
+  reportContent: { paddingHorizontal: 16 }, shortContent: { paddingVertical: 12 },
   title: { fontSize: 28, color: BLUE, fontWeight: '700', marginVertical: 8 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   titleIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: '#E5EDFF' },
@@ -181,5 +190,6 @@ export const ui = StyleSheet.create({
   footerButton: { flex: 1, paddingVertical: 20, alignItems: 'center', justifyContent: 'center' },
   footerWrapped: { flexWrap: 'wrap' },
   footerButtonWrapped: { flexBasis: '50%', minHeight: 44, paddingVertical: 8 },
+  compactButton: { minHeight: 44, paddingVertical: 8 },
   row: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
 });

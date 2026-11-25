@@ -1,5 +1,7 @@
+import { Dialog } from '@/components/app-modal';
+import { ResponsiveGrid } from '@/components/responsive-grid';
 import { useCallback, useRef, useState } from 'react';
-import { Modal, View } from 'react-native';
+import { View } from 'react-native';
 import { Text } from '@/components/app-text';
 import { useAuth } from '@/contexts/auth';
 import { useApiResource } from '@/hooks/use-api-resource';
@@ -86,22 +88,24 @@ export default function LixeiraScreen() {
         <Button label="Excluir definitivamente" danger disabled={!canWrite} onPress={solicitarExclusaoDefinitiva} />
       </View>
       {!data?.jornadas.length && <Text style={ui.text}>A lixeira está vazia.</Text>}
-      {data?.jornadas.map((j) => {
-        const checked = selectedIds.includes(j.id);
-        const nome = data.prestadores.find((p) => p.id === j.prestador_id)?.nome ?? `Prestador #${j.prestador_id}`;
-        return <View style={ui.card} key={j.id}>
-          <Text style={ui.subtitle}>{nome}</Text>
-          <Text style={ui.text}>{referenciaJornada(j.data_jornada, j.id)} · Cancelado</Text>
-          <Text style={ui.text}>Função: {data.funcoes.find((f) => f.id === j.funcao_id)?.nome ?? `#${j.funcao_id}`}</Text>
-          <Text style={ui.text}>Setor: {data.setores.find((s) => s.id === j.setor_id)?.nome ?? `#${j.setor_id}`}</Text>
-          <Text style={ui.text}>Valor/hora histórico: {dinheiro(j.valor_hora)}</Text>
-          <Text style={ui.text}>Enviada à lixeira em {horarioFormulario(j.excluida_em)} · {nomeAutor(j.excluida_por_usuario)}</Text>
-          <Button label={checked ? '✓ Selecionada — desmarcar' : 'Selecionar jornada'} secondary={!checked}
-            disabled={pending || detailLoading || (!checked && selectedIds.length >= 50)}
-            onPress={() => setSelectedIds((ids) => checked ? ids.filter((id) => id !== j.id) : [...ids, j.id])} />
-          <Button label="Ver histórico" secondary disabled={pending || detailLoading} onPress={() => void showDetails(j.id)} />
-        </View>;
-      })}
+      <ResponsiveGrid>
+        {data?.jornadas.map((j) => {
+          const checked = selectedIds.includes(j.id);
+          const nome = data.prestadores.find((p) => p.id === j.prestador_id)?.nome ?? `Prestador #${j.prestador_id}`;
+          return <View style={ui.card} key={j.id}>
+            <Text style={ui.subtitle}>{nome}</Text>
+            <Text style={ui.text}>{referenciaJornada(j.data_jornada, j.id)} · Cancelado</Text>
+            <Text style={ui.text}>Função: {data.funcoes.find((f) => f.id === j.funcao_id)?.nome ?? `#${j.funcao_id}`}</Text>
+            <Text style={ui.text}>Setor: {data.setores.find((s) => s.id === j.setor_id)?.nome ?? `#${j.setor_id}`}</Text>
+            <Text style={ui.text}>Valor/hora histórico: {dinheiro(j.valor_hora)}</Text>
+            <Text style={ui.text}>Enviada à lixeira em {horarioFormulario(j.excluida_em)} · {nomeAutor(j.excluida_por_usuario)}</Text>
+            <Button label={checked ? '✓ Selecionada — desmarcar' : 'Selecionar jornada'} secondary={!checked}
+              disabled={pending || detailLoading || (!checked && selectedIds.length >= 50)}
+              onPress={() => setSelectedIds((ids) => checked ? ids.filter((id) => id !== j.id) : [...ids, j.id])} />
+            <Button label="Ver histórico" secondary disabled={pending || detailLoading} onPress={() => void showDetails(j.id)} />
+          </View>;
+        })}
+      </ResponsiveGrid>
     </>}
     {detailLoading && <Text style={ui.text}>Consultando histórico…</Text>}
     {details && resource.fresh && <View style={ui.card}>
@@ -109,18 +113,14 @@ export default function LixeiraScreen() {
       <History items={details.historico} />
       <Button secondary label="Fechar histórico" onPress={() => setDetails(null)} />
     </View>}
-    <Modal visible={!!action} transparent animationType="fade" onRequestClose={() => { if (!pending) setAction(null); }}>
-      <View style={{ flex: 1, backgroundColor: '#001B4266', padding: 24, alignItems: 'center', justifyContent: 'center' }}>
-        <View accessibilityViewIsModal style={[ui.card, { width: '100%', maxWidth: 520, backgroundColor: '#FFFFFF' }]}>
-          <Text style={ui.subtitle}>{action === 'excluir' ? 'Excluir definitivamente?' : 'Restaurar como Cancelado?'}</Text>
-          <Text style={ui.text}>{selectedIds.length} jornada(s) selecionada(s).</Text>
-          <Text style={ui.text}>{action === 'excluir'
-            ? 'A jornada e todas as informações do seu histórico serão removidas do banco de dados. Não será possível consultá-las ou restaurá-las pelo aplicativo após esta ação.'
-            : 'As jornadas voltarão à consulta com status Cancelado. A restauração não autoriza realização nem reabre a jornada.'}</Text>
-          <Button label={pending ? 'Registrando…' : action === 'excluir' ? 'Excluir definitivamente' : 'Confirmar restauração'} danger={action === 'excluir'} disabled={!canWrite} onPress={() => void confirm()} />
-          <Button label="Voltar" secondary disabled={pending} onPress={() => setAction(null)} />
-        </View>
-      </View>
-    </Modal>
+    <Dialog visible={!!action} onRequestClose={() => { if (!pending) setAction(null); }}>
+      <Text style={ui.subtitle}>{action === 'excluir' ? 'Excluir definitivamente?' : 'Restaurar como Cancelado?'}</Text>
+      <Text style={ui.text}>{selectedIds.length} jornada(s) selecionada(s).</Text>
+      <Text style={ui.text}>{action === 'excluir'
+        ? 'A jornada e todas as informações do seu histórico serão removidas do banco de dados. Não será possível consultá-las ou restaurá-las pelo aplicativo após esta ação.'
+        : 'As jornadas voltarão à consulta com status Cancelado. A restauração não autoriza realização nem reabre a jornada.'}</Text>
+      <Button label={pending ? 'Registrando…' : action === 'excluir' ? 'Excluir definitivamente' : 'Confirmar restauração'} danger={action === 'excluir'} disabled={!canWrite} onPress={() => void confirm()} />
+      <Button label="Voltar" secondary disabled={pending} onPress={() => setAction(null)} />
+    </Dialog>
   </JourneyShell>;
 }

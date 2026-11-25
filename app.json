@@ -3,11 +3,12 @@
     "name": "front",
     "slug": "pontoxtra",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "front",
     "userInterfaceStyle": "light",
     "ios": {
+      "supportsTablet": true,
       "icon": "./assets/expo.icon"
     },
     "android": {

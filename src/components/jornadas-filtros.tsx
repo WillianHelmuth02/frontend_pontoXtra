@@ -1,5 +1,6 @@
+import { AppModal } from '@/components/app-modal';
 import { useState } from 'react';
-import { Keyboard, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Keyboard, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/components/app-text';
 import { FILTROS_VAZIOS, ORDENS_JORNADAS, STATUS_LABELS, queryJornadas, type FiltrosJornadas, type OrdemJornadas, type StatusJornada } from '@/utils/jornadas';
 import { BLUE, Button, ui } from './journey-ui';
@@ -44,7 +45,7 @@ export function JornadasFiltros({ applied, onApply, onClose }: {
   }
 
   return (
-    <Modal transparent animationType="fade" onRequestClose={onClose}>
+    <AppModal transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View accessibilityViewIsModal style={styles.dialog}>
           <View style={styles.header}>
@@ -95,7 +96,7 @@ export function JornadasFiltros({ applied, onApply, onClose }: {
           </View>
         </View>
       </View>
-    </Modal>
+    </AppModal>
   );
 }
 
@@ -104,7 +105,7 @@ export function JornadasOrdem({ value, onSelect, onClose }: {
 }) {
   const options = Object.keys(ORDENS_JORNADAS) as OrdemJornadas[];
   return (
-    <Modal transparent animationType="fade" onRequestClose={onClose}>
+    <AppModal transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View accessibilityViewIsModal style={[styles.dialog, styles.orderDialog]}>
           <View style={styles.header}><Text accessibilityRole="header" style={ui.subtitle}>Ordenar jornadas</Text></View>
@@ -116,7 +117,7 @@ export function JornadasOrdem({ value, onSelect, onClose }: {
           <View style={styles.footer}><Button secondary label="Cancelar" onPress={onClose} /></View>
         </View>
       </View>
-    </Modal>
+    </AppModal>
   );
 }
 
@@ -124,7 +125,7 @@ const styles = StyleSheet.create({
   orderDialog: { maxWidth: 440, height: 'auto', maxHeight: '94%' },
   orderScroll: { flexGrow: 0, flexShrink: 1 },
   orderOptions: { padding: 16, gap: 8 },
-  overlay: { flex: 1, padding: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#001B4266' },
+  overlay: { flex: 1, padding: 12, alignItems: 'center', justifyContent: 'center' },
   dialog: { width: '100%', maxWidth: 760, height: '94%', backgroundColor: '#FFFFFF', borderRadius: 18, overflow: 'hidden' },
   header: { paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderColor: '#DCE6F3' },
   scroll: { flex: 1 },

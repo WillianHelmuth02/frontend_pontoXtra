@@ -6,6 +6,7 @@ import { useRef, useState, type ElementRef } from 'react';
 import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/components/app-text';
 import { FontSizeControl } from '@/components/font-size-control';
+import { useAppLayout } from '@/hooks/use-app-layout';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 /**
@@ -44,6 +45,7 @@ export default function LoginScreen() {
   const campoEmail = useRef<ElementRef<typeof TextInput>>(null);
   const campoSenha = useRef<ElementRef<typeof TextInput>>(null);
   const { usuario, login } = useAuth();
+  const { split, wide, short } = useAppLayout();
 
   function mostrarCampoAtivo() {
     if (Platform.OS === 'web' || !Keyboard.isVisible()) return;
@@ -71,23 +73,23 @@ export default function LoginScreen() {
     <View style={styles.screen}>
       <StatusBar style="dark" />
       {/* O fundo é decorativo e não deve interceptar toques no formulário. */}
-      <View pointerEvents="none" style={styles.header}>
+      <View pointerEvents="none" style={[styles.header, split && styles.splitHeader]}>
         {circles.map((circle, index) => <View key={index} style={[styles.circle, circle]} />)}
       </View>
       <KeyboardAvoidingView behavior={Platform.OS === 'web' ? undefined : 'padding'} style={styles.keyboardAvoidingView}>
-        <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-          <ScrollView ref={rolagem} bounces={false} contentContainerStyle={styles.scrollContent}
+        <SafeAreaView style={styles.safeArea}>
+          <ScrollView ref={rolagem} bounces={false} contentContainerStyle={[styles.scrollContent, short && styles.shortContent, split && styles.splitContent]}
             keyboardShouldPersistTaps="handled" onKeyboardDidShow={mostrarCampoAtivo} onLayout={mostrarCampoAtivo}>
             <View style={styles.fontControl}><FontSizeControl /></View>
             {/* Cartão branco sobreposto ao painel. contentFit preserva a marca
                 inteira e sua proporção, sem recortar o arquivo original. */}
-            <View style={styles.logoCard}>
+            <View style={[styles.logoCard, short && styles.shortLogoCard]}>
               <Image contentFit="contain" source={require('@/assets/images/Logo/Logo principal.png')} style={styles.logo} />
             </View>
-            <View style={styles.formPanel}>
+            <View style={[styles.formPanel, short && styles.shortPanel, split && styles.splitPanel]}>
               <Text style={styles.title}>Login</Text>
               {/* Os rótulos ficam fora dos inputs para continuar visíveis ao digitar. */}
-              <View style={styles.fields}>
+              <View style={[styles.fields, wide && styles.wideFields, short && styles.shortFields]}>
                 <View>
                   <Text style={styles.label}>E-MAIL</Text>
                   <TextInput ref={campoEmail} accessibilityLabel="E-mail" autoCapitalize="none" autoCorrect={false}
@@ -125,11 +127,19 @@ const styles = StyleSheet.create({
   circle: { position: 'absolute', borderRadius: 999 },
   keyboardAvoidingView: { flex: 1 }, safeArea: { flex: 1 }, scrollContent: { flexGrow: 1, paddingTop: 106 },
   fontControl: { position: 'absolute', top: 16, right: 20 },
+  shortContent: { paddingTop: 68 },
+  splitContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly', padding: 28, paddingTop: 68, gap: 24, width: '100%', maxWidth: 1080, alignSelf: 'center' },
+  splitHeader: { right: '53%', height: '100%' },
   logoCard: { alignSelf: 'center', alignItems: 'center', justifyContent: 'center', width: 280, height: 280, borderRadius: 17, backgroundColor: '#FFFFFF', shadowColor: '#00245B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3, zIndex: 1 },
-  logo: { width: 255, height: 255 },
+  logo: { width: '91%', height: '91%' },
+  shortLogoCard: { width: 180, height: 180 },
   formPanel: { flex: 1, minHeight: 440, marginTop: -76, paddingTop: 159, paddingBottom: 32, paddingHorizontal: 32, alignItems: 'center', borderTopLeftRadius: 52, borderTopRightRadius: 52, backgroundColor: '#F1F1F1' },
+  shortPanel: { minHeight: 0, paddingTop: 96 },
+  splitPanel: { flexGrow: 1, minHeight: 0, marginTop: 0, paddingTop: 12, paddingBottom: 16, maxWidth: 480 },
   title: { color: '#1E2424', fontSize: 46, fontWeight: '800', letterSpacing: -1.5 },
   fields: { alignSelf: 'stretch', marginTop: 45, gap: 13 },
+  wideFields: { width: '100%', maxWidth: 440, alignSelf: 'center' },
+  shortFields: { marginTop: 16 },
   label: { marginLeft: 3, marginBottom: 5, color: '#606060', fontSize: 12, fontWeight: '500', letterSpacing: 2.1 },
   input: { height: 57, paddingHorizontal: 23, borderRadius: 17, color: '#383838', backgroundColor: '#CECECE', fontSize: 16 },
   loginButton: { height: 48, marginTop: 7, borderRadius: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1D2323' },

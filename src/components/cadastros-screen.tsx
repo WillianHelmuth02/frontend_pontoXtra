@@ -1,6 +1,8 @@
+import { AppModal } from '@/components/app-modal';
+import { ResponsiveGrid } from '@/components/responsive-grid';
 import { Redirect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { Modal, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { Text } from '@/components/app-text';
 import { useAuth } from '@/contexts/auth';
 import { useApiResource } from '@/hooks/use-api-resource';
@@ -93,22 +95,24 @@ function ListaCadastros({ tipo }: { tipo: Tipo }) {
     {resource.fresh && <>
       <Text style={ui.text}>{itens.length} cadastro(s) encontrado(s).</Text>
       {!itens.length && <Text style={ui.text}>Nenhum cadastro encontrado para estes filtros.</Text>}
-      {itens.map((item) => <View key={item.id} style={ui.card}>
-        <Text accessibilityRole="header" style={ui.subtitle}>{item.nome}</Text>
-        <Text style={ui.text}>#{item.id} · {item.ativo ? 'Ativo' : 'Inativo'}</Text>
-        {funcao && <Text style={ui.text}>Valor por hora: {dinheiro(item.valor_hora ?? '0.00')}</Text>}
-        {prestador && <>
-          <Text style={ui.text}>Documento: {item.documento}</Text>
-          <Text style={ui.text}>Telefone: {item.telefone || 'Não informado'}</Text>
-          <Text style={ui.text}>E-mail: {item.email || 'Não informado'}</Text>
-        </>}
-        <Button label={`Editar ${singular}`} secondary disabled={pending} onPress={() => abrir({ tipo: 'editar', item })} />
-        <Button label={item.ativo ? 'Desativar' : 'Reativar'} danger={item.ativo} secondary={!item.ativo} disabled={pending} onPress={() => abrir({ tipo: 'status', item })} />
-      </View>)}
+      <ResponsiveGrid>
+        {itens.map((item) => <View key={item.id} style={ui.card}>
+          <Text accessibilityRole="header" style={ui.subtitle}>{item.nome}</Text>
+          <Text style={ui.text}>#{item.id} · {item.ativo ? 'Ativo' : 'Inativo'}</Text>
+          {funcao && <Text style={ui.text}>Valor por hora: {dinheiro(item.valor_hora ?? '0.00')}</Text>}
+          {prestador && <>
+            <Text style={ui.text}>Documento: {item.documento}</Text>
+            <Text style={ui.text}>Telefone: {item.telefone || 'Não informado'}</Text>
+            <Text style={ui.text}>E-mail: {item.email || 'Não informado'}</Text>
+          </>}
+          <Button label={`Editar ${singular}`} secondary disabled={pending} onPress={() => abrir({ tipo: 'editar', item })} />
+          <Button label={item.ativo ? 'Desativar' : 'Reativar'} danger={item.ativo} secondary={!item.ativo} disabled={pending} onPress={() => abrir({ tipo: 'status', item })} />
+        </View>)}
+      </ResponsiveGrid>
     </>}
     <Button label="Atualizar lista" secondary disabled={pending || resource.loading} onPress={() => void resource.reload()} />
-    <Modal transparent visible={!!acao} animationType="fade" onRequestClose={() => { if (!enviando.current) setAcao(null); }}>
-      <View style={{ flex: 1, backgroundColor: '#001B4266', justifyContent: 'center', padding: 24 }}>
+    <AppModal transparent visible={!!acao} animationType="fade" onRequestClose={() => { if (!enviando.current) setAcao(null); }}>
+      <View style={{ flex: 1, justifyContent: 'center', padding: 24 }}>
         <View accessibilityViewIsModal style={{ backgroundColor: '#FFFFFF', borderRadius: 16, maxHeight: '90%', width: '100%', maxWidth: 600, alignSelf: 'center' }}>
           <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 24, gap: 14 }}>
             <Text accessibilityRole="header" style={ui.subtitle}>{acao?.tipo === 'status'
@@ -132,6 +136,6 @@ function ListaCadastros({ tipo }: { tipo: Tipo }) {
           </ScrollView>
         </View>
       </View>
-    </Modal>
+    </AppModal>
   </JourneyShell>;
 }

@@ -1,6 +1,8 @@
+import { AppModal } from '@/components/app-modal';
+import { ResponsiveGrid } from '@/components/responsive-grid';
 import { Redirect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { Modal, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { Text } from '@/components/app-text';
 import { useAuth } from '@/contexts/auth';
 import { useApiResource } from '@/hooks/use-api-resource';
@@ -78,18 +80,20 @@ function ListaUsuarios({ autorId }: { autorId: string }) {
     {resource.fresh && <>
       <Text style={ui.text}>{itens.length} usuário(s) encontrado(s).</Text>
       {!itens.length && <Text style={ui.text}>Nenhum usuário encontrado para estes filtros.</Text>}
-      {itens.map((item) => <View key={item.id} style={ui.card}>
-        <Text accessibilityRole="header" style={ui.subtitle}>{item.nome}{item.id === autorId ? ' (sua conta)' : ''}</Text>
-        <Text style={ui.text}>{item.email}</Text>
-        <Text style={ui.text}>#{item.id} · {PERFIS[item.perfil]} · {item.ativo ? 'Ativo' : 'Inativo'}</Text>
-        <Button label="Editar usuário" secondary disabled={pending} onPress={() => abrir({ tipo: 'editar', item })} />
-        {item.id === autorId ? <Text style={ui.text}>Você mantém seu próprio perfil de administrador e sua conta ativa.</Text>
-          : <Button label={item.ativo ? 'Desativar' : 'Reativar'} danger={item.ativo} secondary={!item.ativo} disabled={pending} onPress={() => abrir({ tipo: 'status', item })} />}
-      </View>)}
+      <ResponsiveGrid>
+        {itens.map((item) => <View key={item.id} style={ui.card}>
+          <Text accessibilityRole="header" style={ui.subtitle}>{item.nome}{item.id === autorId ? ' (sua conta)' : ''}</Text>
+          <Text style={ui.text}>{item.email}</Text>
+          <Text style={ui.text}>#{item.id} · {PERFIS[item.perfil]} · {item.ativo ? 'Ativo' : 'Inativo'}</Text>
+          <Button label="Editar usuário" secondary disabled={pending} onPress={() => abrir({ tipo: 'editar', item })} />
+          {item.id === autorId ? <Text style={ui.text}>Você mantém seu próprio perfil de administrador e sua conta ativa.</Text>
+            : <Button label={item.ativo ? 'Desativar' : 'Reativar'} danger={item.ativo} secondary={!item.ativo} disabled={pending} onPress={() => abrir({ tipo: 'status', item })} />}
+        </View>)}
+      </ResponsiveGrid>
     </>}
     <Button label="Atualizar lista" secondary disabled={pending || resource.loading} onPress={() => void resource.reload()} />
-    <Modal transparent visible={!!acao} animationType="fade" onRequestClose={() => { if (!enviando.current) fechar(); }}>
-      <View style={{ flex: 1, backgroundColor: '#001B4266', justifyContent: 'center', padding: 24 }}>
+    <AppModal transparent visible={!!acao} animationType="fade" onRequestClose={() => { if (!enviando.current) fechar(); }}>
+      <View style={{ flex: 1, justifyContent: 'center', padding: 24 }}>
         <View accessibilityViewIsModal style={{ backgroundColor: '#FFFFFF', borderRadius: 16, maxHeight: '90%', width: '100%', maxWidth: 600, alignSelf: 'center' }}>
           <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 24, gap: 14 }}>
             <Text accessibilityRole="header" style={ui.subtitle}>{acao?.tipo === 'status' ? `${acao.item.ativo ? 'Desativar' : 'Reativar'} usuário` : acao?.item ? 'Editar usuário' : 'Novo usuário'}</Text>
@@ -110,6 +114,6 @@ function ListaUsuarios({ autorId }: { autorId: string }) {
           </ScrollView>
         </View>
       </View>
-    </Modal>
+    </AppModal>
   </JourneyShell>;
 }

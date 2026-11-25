@@ -1,5 +1,6 @@
+import { AppModal } from '@/components/app-modal';
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/app-text';
 import { useFontSize } from '@/contexts/font-size';
 
@@ -16,7 +17,7 @@ export function FontSizeControl({ onBlue = false }: { onBlue?: boolean }) {
       style={[styles.trigger, onBlue && styles.triggerOnBlue]}>
       <Text style={[styles.triggerLabel, onBlue && styles.white]}>Aa</Text>
     </Pressable>
-    <Modal transparent visible={open} animationType="fade" onRequestClose={close}>
+    <AppModal transparent visible={open} animationType="fade" onRequestClose={close}>
       <View style={styles.overlay}>
         <View accessibilityViewIsModal style={styles.panel}>
           <ScrollView bounces={false} contentContainerStyle={styles.panelContent}>
@@ -36,7 +37,7 @@ export function FontSizeControl({ onBlue = false }: { onBlue?: boolean }) {
           </ScrollView>
         </View>
       </View>
-    </Modal>
+    </AppModal>
   </>;
 }
 
@@ -45,7 +46,7 @@ const styles = StyleSheet.create({
   triggerOnBlue: { backgroundColor: '#004999', borderWidth: 1, borderColor: '#B8D6FF' },
   triggerLabel: { color: '#004999', fontSize: 18, fontWeight: '700' },
   white: { color: '#FFFFFF' },
-  overlay: { flex: 1, backgroundColor: '#001B4266', padding: 24, alignItems: 'center', justifyContent: 'center' },
+  overlay: { flex: 1, padding: 24, alignItems: 'center', justifyContent: 'center' },
   panel: { width: '100%', maxWidth: 360, maxHeight: '90%', backgroundColor: '#FFFFFF', borderRadius: 16 },
   panelContent: { padding: 20, gap: 14 },
   title: { color: '#173F6B', fontSize: 20, fontWeight: '700' },

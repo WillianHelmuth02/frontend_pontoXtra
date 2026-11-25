@@ -1,7 +1,9 @@
+import { Dialog } from '@/components/app-modal';
+import { maxAppWidth, useAppLayout } from '@/hooks/use-app-layout';
 import { Redirect, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Keyboard, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, Keyboard, Pressable, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/components/app-text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/auth';
@@ -162,13 +164,14 @@ export function JornadasScreen() {
     }
   }
 
+  const { wide, short } = useAppLayout();
   if (!usuario) return <Redirect href="/login" />;
 
   return (
     <View style={styles.screen}>
       <StatusBar style="light" />
       <AppHeader nome={usuario.nome} perfil={usuario.perfil} busy={pending} />
-      <View style={styles.body}>
+      <SafeAreaView edges={['left', 'right']} style={[styles.body, wide && styles.expanded]}>
         <FlatList
           data={fresh ? visible : []}
           keyExtractor={(item) => item.id}
@@ -233,61 +236,61 @@ export function JornadasScreen() {
             const nome = nomePrestador(item.prestador_id, nomesPrestadores);
             const identificacao = identificacaoJornada(nome, item.data_jornada, item.id);
             const duracao = item.minutos_trabalhados == null ? '' : formatarDuracao(item.minutos_trabalhados);
-            return <View style={[styles.row, checked && styles.rowSelected]}>
+            return <View style={[styles.row, wide && styles.wideRow, checked && styles.rowSelected]}>
               <Pressable accessibilityRole={exclusionMode ? 'checkbox' : 'radio'} accessibilityState={{ checked, disabled: selectionDisabled }} accessibilityLabel={`${identificacao}, ${STATUS_LABELS[item.status]}${duracao ? `, tempo trabalhado: ${duracao}` : ''}`} disabled={selectionDisabled} onPress={() => {
                 if (exclusionMode) setExclusionIds((ids) => checked ? ids.filter((id) => id !== item.id) : [...ids, item.id]);
                 else setSelectedId(checked ? null : item.id);
                 setNotice('');
-              }} style={[styles.selectArea, exclusionMode && selectionDisabled && styles.disabled]}>
-              <WorkIcon />
-              <View style={styles.rowText}>
-                <Text style={styles.person}>{nome}</Text>
-                <Text style={styles.meta}>{referenciaJornada(item.data_jornada, item.id)}</Text>
-                <Text style={styles.meta}>{nomesFuncoes.get(item.funcao_id) ?? `Função #${item.funcao_id}`} · {nomesSetores.get(item.setor_id) ?? `Setor #${item.setor_id}`}</Text>
-                {!!duracao && <Text style={styles.meta}>Tempo trabalhado · {duracao}</Text>}
-                <Text style={styles.rowStatus}>{STATUS_LABELS[item.status]}</Text>
-                {!!item.entrada_em && <Text style={styles.entryLabel}>Entrada registrada</Text>}
-              </View>
-              <View style={[styles.radio, checked && styles.radioChecked]}>{checked && <Text style={styles.check}>✓</Text>}</View>
+              }} style={[styles.selectArea, wide && styles.wideSelectArea, exclusionMode && selectionDisabled && styles.disabled]}>
+                <WorkIcon />
+                <View style={[styles.rowText, wide && styles.wideRowText]}>
+                  <View style={[styles.rowGroup, wide && styles.wideRowGroup]}>
+                    <Text style={styles.person}>{nome}</Text>
+                    <Text style={styles.meta}>{referenciaJornada(item.data_jornada, item.id)}</Text>
+                    <Text style={styles.meta}>{nomesFuncoes.get(item.funcao_id) ?? `Função #${item.funcao_id}`} · {nomesSetores.get(item.setor_id) ?? `Setor #${item.setor_id}`}</Text>
+                  </View>
+                  <View style={[styles.rowGroup, wide && styles.wideRowGroup]}>
+                    {!!duracao && <Text style={styles.meta}>Tempo trabalhado · {duracao}</Text>}
+                    <Text style={styles.rowStatus}>{STATUS_LABELS[item.status]}</Text>
+                    {!!item.entrada_em && <Text style={styles.entryLabel}>Entrada registrada</Text>}
+                  </View>
+                </View>
+                <View style={[styles.radio, checked && styles.radioChecked]}>{checked && <Text style={styles.check}>✓</Text>}</View>
               </Pressable>
-              <Pressable accessibilityRole="button" disabled={pending} accessibilityLabel={`Ver detalhes de ${identificacao}`} onPress={() => router.push({ pathname: '/jornada', params: { id: item.id } })}><Text style={[styles.filterButton, { textAlign: 'right' }]}>Ver detalhes →</Text></Pressable>
+              <Pressable accessibilityRole="button" disabled={pending} accessibilityLabel={`Ver detalhes de ${identificacao}`} style={wide && styles.wideDetails} onPress={() => router.push({ pathname: '/jornada', params: { id: item.id } })}><Text style={[styles.filterButton, { textAlign: 'right' }]}>Ver detalhes →</Text></Pressable>
             </View>;
           }}
         />
         {/* Indica por que a ação está indisponível sem inventar uma mudança de status. */}
         {usuario.perfil === 'OPERACIONAL' && <Text style={styles.hint}>{pending ? 'Registrando ação…' : exclusionMode ? 'Encerre a seleção de exclusão para registrar entrada.' : canEnter ? 'Jornada selecionada. Toque em Entrada para confirmar.' : 'Selecione uma jornada autorizada pelo ADM para realização e sem entrada registrada.'}</Text>}
-      </View>
-      <SafeAreaView edges={['bottom']} style={styles.bottomSafe}>
-        <View style={styles.footer}>
-          <Pressable accessibilityRole="button" disabled={pending} onPress={() => router.replace('/session')} style={styles.footerButton}><Text style={styles.footerText}>INÍCIO</Text></Pressable>
-          {usuario.perfil === 'OPERACIONAL' && <Pressable accessibilityRole="button" accessibilityState={{ disabled: !canEnter }} disabled={!canEnter} onPress={() => setConfirmation(true)} style={[styles.footerButton, !canEnter && styles.disabled]}><Text style={styles.footerText}>ENTRADA</Text></Pressable>}
-          <Pressable accessibilityRole="button" disabled={pending} onPress={() => router.push('/logout')} style={styles.footerButton}><Text style={styles.footerText}>SAIR</Text></Pressable>
+      </SafeAreaView>
+      <SafeAreaView edges={['bottom', 'left', 'right']} style={styles.bottomSafe}>
+        <View style={[styles.footer, wide && styles.expanded]}>
+          <Pressable accessibilityRole="button" disabled={pending} onPress={() => router.replace('/session')} style={[styles.footerButton, short && styles.shortFooterButton]}><Text style={styles.footerText}>INÍCIO</Text></Pressable>
+          {usuario.perfil === 'OPERACIONAL' && <Pressable accessibilityRole="button" accessibilityState={{ disabled: !canEnter }} disabled={!canEnter} onPress={() => setConfirmation(true)} style={[styles.footerButton, short && styles.shortFooterButton, !canEnter && styles.disabled]}><Text style={styles.footerText}>ENTRADA</Text></Pressable>}
+          <Pressable accessibilityRole="button" disabled={pending} onPress={() => router.push('/logout')} style={[styles.footerButton, short && styles.shortFooterButton]}><Text style={styles.footerText}>SAIR</Text></Pressable>
         </View>
       </SafeAreaView>
 
       {/* Modal compartilhado entre Web e mobile; Alert nativo não atende a Web. */}
-      <Modal transparent visible={exclusionConfirm} animationType="fade" onRequestClose={() => setExclusionConfirm(false)}>
-        <View style={styles.overlay}><View accessibilityViewIsModal style={styles.dialog}>
-          <Text style={styles.dialogTitle}>Excluir {exclusionIds.length} jornada(s)?</Text>
-          <Text style={styles.dialogText}>Somente as canceladas selecionadas serão enviadas à lixeira e deixarão de aparecer na lista. Você poderá consultá-las ou restaurá-las como Cancelado antes da exclusão definitiva.</Text>
-          <View style={styles.actions}>
-            <Pressable accessibilityRole="button" onPress={() => setExclusionConfirm(false)} style={styles.secondary}><Text style={styles.filterButton}>Voltar</Text></Pressable>
-            <Pressable accessibilityRole="button" disabled={!canExclude} onPress={excludeSelected} style={[styles.primary, !canExclude && styles.disabled]}><Text style={styles.primaryText}>Excluir selecionadas</Text></Pressable>
-          </View>
-        </View></View>
-      </Modal>
-      <Modal transparent visible={confirmation} animationType="fade" onRequestClose={() => setConfirmation(false)}>
-        <View style={styles.overlay}><View accessibilityViewIsModal style={styles.dialog}>
-          <Text accessibilityRole="header" style={styles.dialogTitle}>Registrar entrada?</Text>
-          {selected && <Text style={styles.dialogText}>{identificacaoJornada(nomePrestador(selected.prestador_id, nomesPrestadores), selected.data_jornada, selected.id)}</Text>}
-          <Text style={styles.dialogText}>O horário atual do servidor será registrado nesta jornada.</Text>
-          {confirmation && selected && <AvisoEntrada jornada={selected} />}
-          <View style={styles.actions}>
-            <Pressable accessibilityRole="button" onPress={() => setConfirmation(false)} style={styles.secondary}><Text style={styles.filterButton}>Cancelar</Text></Pressable>
-            <Pressable accessibilityRole="button" disabled={!canEnter} onPress={registerEntry} style={styles.primary}><Text style={styles.primaryText}>Confirmar entrada</Text></Pressable>
-          </View>
-        </View></View>
-      </Modal>
+      <Dialog visible={exclusionConfirm} onRequestClose={() => setExclusionConfirm(false)}>
+        <Text style={styles.dialogTitle}>Excluir {exclusionIds.length} jornada(s)?</Text>
+        <Text style={styles.dialogText}>Somente as canceladas selecionadas serão enviadas à lixeira e deixarão de aparecer na lista. Você poderá consultá-las ou restaurá-las como Cancelado antes da exclusão definitiva.</Text>
+        <View style={styles.actions}>
+          <Pressable accessibilityRole="button" onPress={() => setExclusionConfirm(false)} style={styles.secondary}><Text style={styles.filterButton}>Voltar</Text></Pressable>
+          <Pressable accessibilityRole="button" disabled={!canExclude} onPress={excludeSelected} style={[styles.primary, !canExclude && styles.disabled]}><Text style={styles.primaryText}>Excluir selecionadas</Text></Pressable>
+        </View>
+      </Dialog>
+      <Dialog visible={confirmation} onRequestClose={() => setConfirmation(false)}>
+        <Text accessibilityRole="header" style={styles.dialogTitle}>Registrar entrada?</Text>
+        {selected && <Text style={styles.dialogText}>{identificacaoJornada(nomePrestador(selected.prestador_id, nomesPrestadores), selected.data_jornada, selected.id)}</Text>}
+        <Text style={styles.dialogText}>O horário atual do servidor será registrado nesta jornada.</Text>
+        {confirmation && selected && <AvisoEntrada jornada={selected} />}
+        <View style={styles.actions}>
+          <Pressable accessibilityRole="button" onPress={() => setConfirmation(false)} style={styles.secondary}><Text style={styles.filterButton}>Cancelar</Text></Pressable>
+          <Pressable accessibilityRole="button" disabled={!canEnter} onPress={registerEntry} style={styles.primary}><Text style={styles.primaryText}>Confirmar entrada</Text></Pressable>
+        </View>
+      </Dialog>
 
       {filterOpen && <JornadasFiltros applied={filtros}
         onApply={applyFilters} onClose={() => setFilterOpen(false)} />}
@@ -304,6 +307,7 @@ export function JornadasScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#F5F5FF' },
   body: { flex: 1, width: '100%', maxWidth: 680, alignSelf: 'center' },
+  expanded: { maxWidth: maxAppWidth },
   listContent: { paddingHorizontal: 25, paddingBottom: 12, flexGrow: 1 },
   title: { color: BLUE, fontSize: 32, textAlign: 'center', marginTop: 16, marginBottom: 16 },
   toolbar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
@@ -317,10 +321,16 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, minWidth: 0, alignSelf: 'stretch', color: '#173F6B', fontSize: 16, paddingVertical: 8 },
   clearSearch: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   row: { gap: 4, minHeight: 86, borderWidth: 2, borderColor: BLUE, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 14 },
+  wideRow: { flexDirection: 'row', alignItems: 'center', gap: 18 },
   selectArea: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  wideSelectArea: { flex: 1, minWidth: 0 },
+  wideDetails: { minHeight: 44, justifyContent: 'center', flexShrink: 1 },
   newButton: { backgroundColor: BLUE, borderRadius: 8, padding: 12, alignItems: 'center', marginBottom: 12 },
   rowSelected: { backgroundColor: '#E8EFFF' },
   rowText: { flex: 1, gap: 4 },
+  wideRowText: { flexDirection: 'row', alignItems: 'center', gap: 18 },
+  rowGroup: { gap: 4 },
+  wideRowGroup: { flex: 1, minWidth: 0 },
   person: { fontSize: 20, color: BLUE },
   meta: { fontSize: 12, color: '#3D5D85', lineHeight: 17 },
   entryLabel: { fontSize: 12, fontWeight: '600', color: '#17643F' },
@@ -338,11 +348,10 @@ const styles = StyleSheet.create({
   message: { color: '#173F6B', backgroundColor: '#E5EDFF', padding: 12, borderRadius: 8, marginBottom: 12, lineHeight: 20 },
   errorBox: { gap: 8, marginBottom: 16 }, error: { color: '#B42318', lineHeight: 20 },
   bottomSafe: { backgroundColor: BLUE },
-  footer: { flexDirection: 'row', maxWidth: 680, alignSelf: 'center', width: '100%', minHeight: 59 },
+  footer: { flexDirection: 'row', maxWidth: 680, alignSelf: 'center', width: '100%' },
+  shortFooterButton: { minHeight: 44, paddingVertical: 8 },
   footerButton: { flex: 1, paddingVertical: 18, alignItems: 'center', justifyContent: 'center' },
   footerText: { color: '#FFFFFF', fontSize: 18 }, disabled: { opacity: 0.45 },
-  overlay: { flex: 1, backgroundColor: '#001B4266', padding: 20, alignItems: 'center', justifyContent: 'center' },
-  dialog: { backgroundColor: '#FFFFFF', padding: 22, borderRadius: 18, width: '100%', maxWidth: 520, maxHeight: '90%' },
   dialogTitle: { color: BLUE, fontSize: 23, fontWeight: '700', marginBottom: 16 },
   dialogText: { color: '#3D5D85', fontSize: 16, lineHeight: 24, marginBottom: 12 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 10, marginTop: 20 },

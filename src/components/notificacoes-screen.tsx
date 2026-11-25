@@ -1,3 +1,4 @@
+import { ResponsiveGrid } from '@/components/responsive-grid';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { Text } from '@/components/app-text';
@@ -30,14 +31,16 @@ export default function NotificacoesScreen() {
     {!!erro && <Text accessibilityRole="alert" style={ui.error}>{erro}</Text>}
     {!!mensagem && <Text accessibilityRole="alert" style={ui.text}>{mensagem}</Text>}
     {!itens.length && !erro && <Text style={ui.text}>Nenhum aviso por enquanto.</Text>}
-    {itens.map((n) => <View key={n.id} style={ui.card}>
-      <Text style={ui.subtitle}>{!n.lida_em ? '● ' : ''}{n.titulo}</Text>
-      <Text style={ui.text}>{n.mensagem}</Text>
-      <Text style={ui.label}>{identificacaoJornada(n.prestador_nome, n.data_jornada, n.jornada_id)}</Text>
-      <Text style={ui.text}>Recebido em {new Date(n.criada_em).toLocaleString('pt-BR')}</Text>
-      <Button secondary label="Ver jornada" disabled={ocupado} onPress={() => void executar(async () => { await ler(n.id); router.push({ pathname: '/jornada', params: { id: n.jornada_id } }); })} />
-      {!n.lida_em && <Button secondary label="Marcar como lida" disabled={ocupado} onPress={() => void executar(async () => { await ler(n.id); setMais((prev) => prev.map((a) => a.id === n.id ? { ...a, lida_em: new Date().toISOString() } : a)); })} />}
-    </View>)}
+    <ResponsiveGrid>
+      {itens.map((n) => <View key={n.id} style={ui.card}>
+        <Text style={ui.subtitle}>{!n.lida_em ? '● ' : ''}{n.titulo}</Text>
+        <Text style={ui.text}>{n.mensagem}</Text>
+        <Text style={ui.label}>{identificacaoJornada(n.prestador_nome, n.data_jornada, n.jornada_id)}</Text>
+        <Text style={ui.text}>Recebido em {new Date(n.criada_em).toLocaleString('pt-BR')}</Text>
+        <Button secondary label="Ver jornada" disabled={ocupado} onPress={() => void executar(async () => { await ler(n.id); router.push({ pathname: '/jornada', params: { id: n.jornada_id } }); })} />
+        {!n.lida_em && <Button secondary label="Marcar como lida" disabled={ocupado} onPress={() => void executar(async () => { await ler(n.id); setMais((prev) => prev.map((a) => a.id === n.id ? { ...a, lida_em: new Date().toISOString() } : a)); })} />}
+      </View>)}
+    </ResponsiveGrid>
     {!!proximo && <Button secondary label="Carregar anteriores" disabled={ocupado} onPress={() => void executar(async () => { const page = await api<ListaAvisos>(`/notificacoes?antes=${proximo}`); setMais((p) => [...p, ...page.itens.filter((n) => !p.some((a) => a.id === n.id))]); setCursor(page.proximo); })} />}
   </JourneyShell>;
 }

@@ -7,6 +7,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/app-text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppHeader } from '@/components/journey-ui';
+import { useAppLayout } from '@/hooks/use-app-layout';
 
 /**
  * Posições [esquerda, topo] dos círculos decorativos, em unidades de layout.
@@ -27,6 +28,7 @@ const circles = [
 export default function LogoutScreen() {
   // Insets representam áreas reservadas pelo sistema, como notch e indicador inferior.
   const insets = useSafeAreaInsets();
+  const { split, short } = useAppLayout();
   const { usuario, logout } = useAuth();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
@@ -46,16 +48,16 @@ export default function LogoutScreen() {
       <StatusBar style="light" />
       <AppHeader nome={usuario.nome} perfil={usuario.perfil} busy={pending} />
       {/* A rolagem mantém o botão alcançável em aparelhos com pouca altura útil. */}
-      <ScrollView bounces={false} contentContainerStyle={styles.content}>
+      <ScrollView bounces={false} contentContainerStyle={[styles.content, split && styles.splitContent, { paddingLeft: insets.left, paddingRight: insets.right }]}>
         {/* Fundo sem interação; overflow no cabeçalho recorta as formas nas bordas. */}
-        <View pointerEvents="none" style={styles.header}>
+        <View pointerEvents="none" style={[styles.header, split && styles.splitHeader]}>
           <View style={styles.pattern}>
             {circles.map(([left, top], index) => (
               <View key={index} style={[styles.circle, { left, top }]} />
             ))}
           </View>
         </View>
-        <View style={[styles.logoCard, { marginTop: 130 }]}>
+        <View style={[styles.logoCard, short && styles.shortLogoCard, split && styles.splitLogoCard]}>
           <Image
             source={require('@/assets/images/Logo/Logo principal.png')}
             contentFit="contain"
@@ -65,7 +67,7 @@ export default function LogoutScreen() {
         </View>
         {/* O painel começa atrás da logo e se estende pelo restante da tela.
             A margem inferior respeita o sistema e garante pelo menos 32 de respiro. */}
-        <View style={[styles.panel, { paddingBottom: Math.max(insets.bottom, 32) }]}>
+        <View style={[styles.panel, short && styles.shortPanel, split && styles.splitPanel, { paddingBottom: Math.max(insets.bottom, 24) }]}>
           <Text style={styles.title}>Logout</Text>
           <Text style={styles.subtitle}>Tem Certeza?</Text>
           {/* O contexto encerra a sessão somente após a resposta da API (ou 401).
@@ -74,7 +76,7 @@ export default function LogoutScreen() {
             accessibilityRole="button"
             disabled={pending}
             onPress={confirmLogout}
-            style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}>
+            style={({ pressed }) => [styles.button, (short || split) && styles.compactButton, pressed && styles.buttonPressed]}>
             <Text style={styles.buttonText}>{pending ? 'Saindo…' : 'Sair'}</Text>
           </Pressable>
           {error ? <Text accessibilityRole="alert" style={{ color: '#B42318', marginTop: 16 }}>{error}</Text> : null}
@@ -88,22 +90,29 @@ const styles = StyleSheet.create({
   // Fundo claro fixo. flexGrow preenche a tela mesmo quando há pouco conteúdo.
   screen: { flex: 1, backgroundColor: '#EEEEEE' },
   content: { flexGrow: 1 },
+  splitContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 28, paddingVertical: 24, paddingHorizontal: 24 },
   header: { position: 'absolute', top: 0, left: 0, right: 0, height: 390, backgroundColor: '#005D25', overflow: 'hidden' },
+  splitHeader: { right: '53%', height: '100%' },
   // Mantém a composição decorativa centralizada em larguras diferentes da referência.
   pattern: { width: 414, height: 390, alignSelf: 'center' },
   circle: { position: 'absolute', width: 73, height: 73, borderRadius: 37, backgroundColor: '#062354' },
   // zIndex coloca a marca acima do painel. maxWidth limita o cartão em telas estreitas.
-  logoCard: { width: 280, height: 280, maxWidth: '90%', alignSelf: 'center', backgroundColor: '#FFFFFF', borderRadius: 18, alignItems: 'center', justifyContent: 'center', zIndex: 1 },
+  logoCard: { width: 280, height: 280, marginTop: 130, maxWidth: '90%', alignSelf: 'center', backgroundColor: '#FFFFFF', borderRadius: 18, alignItems: 'center', justifyContent: 'center', zIndex: 1 },
+  shortLogoCard: { width: 150, height: 150, marginTop: 20 },
+  splitLogoCard: { marginTop: 0 },
   logo: { width: '100%', height: '100%' },
   // A sobreposição de 76 cria a transição atrás da logo. paddingTop de 86 deixa
   // 10 de espaço após o cartão antes do título. minHeight mantém o painel longo
   // da referência, permitindo rolagem em telas menores.
   panel: { flex: 1, minHeight: 562, marginTop: -76, paddingTop: 86, paddingHorizontal: 32, backgroundColor: '#EEEEEE', borderTopLeftRadius: 64, borderTopRightRadius: 64, alignItems: 'center' },
+  shortPanel: { minHeight: 0 },
+  splitPanel: { minHeight: 0, marginTop: 0, paddingTop: 24, maxWidth: 500 },
   title: { fontSize: 46, lineHeight: 58, fontWeight: '800', letterSpacing: -1.5, color: '#1D2323' },
   subtitle: { marginTop: 8, fontSize: 14, lineHeight: 20, color: '#666666' },
   // AJUSTE DO BOTÃO: marginTop define a distância após a pergunta de confirmação.
   // A largura acompanha o painel até o limite de 268, mantendo o botão centralizado.
   button: { marginTop: 74, width: '100%', maxWidth: 268, height: 47, borderRadius: 8, backgroundColor: '#FF3035', alignItems: 'center', justifyContent: 'center' },
+  compactButton: { marginTop: 24 },
   buttonPressed: { opacity: 0.8 },
   buttonText: { color: '#FFFFFF', fontSize: 26, fontWeight: '700' },
 });

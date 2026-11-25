@@ -1,6 +1,7 @@
+import { Dialog } from '@/components/app-modal';
+import { ResponsiveGrid } from '@/components/responsive-grid';
 import { router } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { Modal, View } from 'react-native';
 import { Text } from '@/components/app-text';
 import { useAuth } from '@/contexts/auth';
 import { useApiResource } from '@/hooks/use-api-resource';
@@ -47,26 +48,24 @@ function CorrectionForm({ jornada }: { jornada: Jornada }) {
   const disabled = pending || uncertain;
   return <JourneyShell title={`Corrigir jornada #${jornada.id}`} busy={pending}>
     <Text style={ui.text}>Horários em Brasília (UTC-03), com data completa e segundos. Use DD/MM/AAAA HH:mm:ss, inclusive se a jornada atravessou a meia-noite.</Text>
-    <Field label="Data de referência *" value={form.data_jornada} onChangeText={(value) => setForm({ ...form, data_jornada: value })} placeholder="DD/MM/AAAA" disabled={disabled} />
-    <Field label="Valor/hora histórico *" value={form.valor_hora} onChangeText={(value) => setForm({ ...form, valor_hora: value })} placeholder="25,50" disabled={disabled} />
-    {(['entrada_em', 'inicio_intervalo_em', 'fim_intervalo_em', 'saida_em'] as const).map((key) => <Field key={key}
-      label={{ entrada_em: 'Entrada *', inicio_intervalo_em: 'Início do intervalo', fim_intervalo_em: 'Fim do intervalo', saida_em: 'Saída *' }[key]}
-      value={form[key]} onChangeText={(value) => setForm({ ...form, [key]: value })} placeholder="DD/MM/AAAA HH:mm:ss" disabled={disabled} />)}
+    <ResponsiveGrid>
+      <Field label="Data de referência *" value={form.data_jornada} onChangeText={(value) => setForm({ ...form, data_jornada: value })} placeholder="DD/MM/AAAA" disabled={disabled} />
+      <Field label="Valor/hora histórico *" value={form.valor_hora} onChangeText={(value) => setForm({ ...form, valor_hora: value })} placeholder="25,50" disabled={disabled} />
+      {(['entrada_em', 'inicio_intervalo_em', 'fim_intervalo_em', 'saida_em'] as const).map((key) => <Field key={key}
+        label={{ entrada_em: 'Entrada *', inicio_intervalo_em: 'Início do intervalo', fim_intervalo_em: 'Fim do intervalo', saida_em: 'Saída *' }[key]}
+        value={form[key]} onChangeText={(value) => setForm({ ...form, [key]: value })} placeholder="DD/MM/AAAA HH:mm:ss" disabled={disabled} />)}
+    </ResponsiveGrid>
     <Text style={ui.text}>Para remover o intervalo, deixe os dois campos de intervalo vazios. A API recalcula tempo e valor e preserva a versão anterior no histórico.</Text>
     {!!error && <Text accessibilityRole="alert" style={ui.error}>{error}</Text>}
     {uncertain && <Text style={ui.error}>Confira os detalhes atualizados antes de outra tentativa. O envio não será repetido automaticamente.</Text>}
     <Button label="Revisar correção" disabled={disabled} onPress={review} />
     <Button label="Voltar aos detalhes" secondary disabled={pending} onPress={() => router.replace({ pathname: '/jornada', params: { id: jornada.id } })} />
-    <Modal visible={!!payload} transparent onRequestClose={() => { if (!pending) setPayload(null); }} animationType="fade">
-      <View style={{ flex: 1, backgroundColor: '#001B4266', padding: 24, justifyContent: 'center', alignItems: 'center' }}>
-        <View accessibilityViewIsModal style={[ui.card, { backgroundColor: '#FFFFFF', width: '100%', maxWidth: 520 }]}>
-          <Text style={ui.subtitle}>Confirmar correção?</Text>
-          <Text style={ui.text}>A jornada voltará para Aguardando conferência. A conferência e a decisão anteriores serão preservadas no histórico, mas deixarão de valer para os dados corrigidos.</Text>
-          <Button label={pending ? 'Salvando…' : 'Confirmar correção'} disabled={pending} onPress={save} />
-          <Button label="Voltar ao formulário" secondary disabled={pending} onPress={() => setPayload(null)} />
-        </View>
-      </View>
-    </Modal>
+    <Dialog visible={!!payload} onRequestClose={() => { if (!pending) setPayload(null); }}>
+      <Text style={ui.subtitle}>Confirmar correção?</Text>
+      <Text style={ui.text}>A jornada voltará para Aguardando conferência. A conferência e a decisão anteriores serão preservadas no histórico, mas deixarão de valer para os dados corrigidos.</Text>
+      <Button label={pending ? 'Salvando…' : 'Confirmar correção'} disabled={pending} onPress={save} />
+      <Button label="Voltar ao formulário" secondary disabled={pending} onPress={() => setPayload(null)} />
+    </Dialog>
   </JourneyShell>;
 }
 

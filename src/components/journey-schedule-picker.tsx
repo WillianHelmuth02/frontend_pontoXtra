@@ -1,5 +1,6 @@
+import { AppModal } from '@/components/app-modal';
 import { useState } from 'react';
-import { FlatList, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/app-text';
 import { dataParaApi, formatarData } from '@/utils/jornadas';
 import { BLUE, Button, ui } from './journey-ui';
@@ -135,7 +136,7 @@ export function SchedulePicker({ label, mode, value, onChange, disabled }: {
         <Text aria-hidden style={styles.triggerArrow}>›</Text>
       </Pressable>
       {open && (
-        <Modal transparent animationType="fade" onRequestClose={close}>
+        <AppModal transparent animationType="fade" onRequestClose={close}>
           <View style={styles.overlay}>
             <View accessibilityViewIsModal style={styles.dialog}>
               <Text accessibilityRole="header" style={ui.subtitle}>{label.replace(/ \*$/, '')}</Text>
@@ -152,7 +153,7 @@ export function SchedulePicker({ label, mode, value, onChange, disabled }: {
               <Button label="Cancelar" secondary onPress={close} />
             </View>
           </View>
-        </Modal>
+        </AppModal>
       )}
     </View>
   );
@@ -162,7 +163,7 @@ const styles = StyleSheet.create({
   trigger: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, minHeight: 48, paddingHorizontal: 14, borderWidth: 1, borderColor: '#A3B9D8', borderRadius: 10, backgroundColor: '#FFFFFF' },
   triggerValue: { color: '#173F6B', fontSize: 16, fontWeight: '600' },
   triggerArrow: { color: BLUE, fontSize: 25 },
-  overlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 12, backgroundColor: '#001B4266' },
+  overlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 12 },
   dialog: { width: '100%', maxWidth: 380, maxHeight: '100%', padding: 14, gap: 10, borderRadius: 20, backgroundColor: '#FFFFFF' },
   calendarScroll: { flexGrow: 0, flexShrink: 1 },
   monthNavigation: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

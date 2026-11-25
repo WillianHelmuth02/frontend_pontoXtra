@@ -1,3 +1,4 @@
+import { ResponsiveGrid } from '@/components/responsive-grid';
 import { Redirect, router } from 'expo-router';
 import { useCallback } from 'react';
 import { View } from 'react-native';
@@ -24,25 +25,29 @@ export default function JourneyHome() {
     ? ['AGUARDANDO_AUTORIZACAO_REALIZACAO', 'REALIZACAO_REJEITADA', 'AGUARDANDO_CONFERENCIA', 'REJEITADO', 'AUTORIZADO'] : ['AGUARDANDO_AUTORIZACAO_REALIZACAO', 'AGUARDANDO_AUTORIZACAO'];
   return <JourneyShell title="Pendências">
     <ResourceState loading={resource.loading} error={resource.error} onRetry={() => void resource.reload()} />
-    {resource.fresh && statuses.map((status) => {
-      const total = resource.data?.por_status.find((group) => group.status === status);
-      return <View style={ui.card} key={status}>
-        <Text style={ui.subtitle}>{status === 'AUTORIZADO' ? 'Pagamentos a registrar' : STATUS_LABELS[status]}</Text>
-        <Text style={ui.text}>{total?.quantidade ?? '0'} jornada(s){adm && ' · ' + dinheiro(total?.valor_calculado ?? '0.00')}</Text>
-        <Button label="Consultar jornadas" secondary onPress={() => router.push({ pathname: '/jornadas', params: { status } })} />
-      </View>;
-    })}
+    <ResponsiveGrid>
+      {resource.fresh && statuses.map((status) => {
+        const total = resource.data?.por_status.find((group) => group.status === status);
+        return <View style={[ui.card, ui.fill]} key={status}>
+          <View style={[ui.field, ui.fill]}>
+            <Text style={ui.subtitle}>{status === 'AUTORIZADO' ? 'Pagamentos a registrar' : STATUS_LABELS[status]}</Text>
+            <Text style={ui.text}>{total?.quantidade ?? '0'} jornada(s){adm && ' · ' + dinheiro(total?.valor_calculado ?? '0.00')}</Text>
+          </View>
+          <Button label="Consultar jornadas" secondary onPress={() => router.push({ pathname: '/jornadas', params: { status } })} />
+        </View>;
+      })}
+    </ResponsiveGrid>
     <Text accessibilityRole="header" style={ui.title}>Acesso rápido</Text>
-    <Button label="Relatórios" secondary onPress={() => router.push('/relatorios')} />
-    {usuario.perfil === 'ADMINISTRADOR' && <Button label="Gerenciar usuários" secondary onPress={() => router.push('/usuarios')} />}
-    {usuario.perfil === 'RH' && <Button label="Criar jornada" onPress={() => router.push('/nova-jornada')} />}
-    {usuario.perfil === 'RH' && <>
-      <Button label="Gerenciar funções" secondary onPress={() => router.push('/funcoes')} />
-      <Button label="Gerenciar setores" secondary onPress={() => router.push('/setores')} />
-      <Button label="Gerenciar prestadores" secondary onPress={() => router.push('/prestadores')} />
-    </>}
-    <Button label="Consultar todas as jornadas" secondary onPress={() => router.push('/jornadas')} />
-    <Button label="Lixeira de jornadas" secondary onPress={() => router.push('/lixeira')} />
-    <Button label="Atualizar pendências" secondary disabled={resource.loading} onPress={() => void resource.reload()} />
+    <ResponsiveGrid>
+      <Button label="Relatórios" secondary onPress={() => router.push('/relatorios')} />
+      {usuario.perfil === 'ADMINISTRADOR' && <Button label="Gerenciar usuários" secondary onPress={() => router.push('/usuarios')} />}
+      {usuario.perfil === 'RH' && <Button label="Criar jornada" onPress={() => router.push('/nova-jornada')} />}
+      {usuario.perfil === 'RH' && <Button label="Gerenciar funções" secondary onPress={() => router.push('/funcoes')} />}
+      {usuario.perfil === 'RH' && <Button label="Gerenciar setores" secondary onPress={() => router.push('/setores')} />}
+      {usuario.perfil === 'RH' && <Button label="Gerenciar prestadores" secondary onPress={() => router.push('/prestadores')} />}
+      <Button label="Consultar todas as jornadas" secondary onPress={() => router.push('/jornadas')} />
+      <Button label="Lixeira de jornadas" secondary onPress={() => router.push('/lixeira')} />
+      <Button label="Atualizar pendências" secondary disabled={resource.loading} onPress={() => void resource.reload()} />
+    </ResponsiveGrid>
   </JourneyShell>;
 }

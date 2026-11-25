@@ -1,3 +1,4 @@
+import { ResponsiveGrid } from '@/components/responsive-grid';
 import { router } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { View } from 'react-native';
@@ -50,12 +51,14 @@ export default function JourneyCreate() {
       <ResourceState loading={resource.loading} error={resource.error} onRetry={() => void resource.reload()} />
       {catalogsEmpty && <Text style={ui.error}>Para criar uma jornada, é necessário ter prestadores, funções e setores ativos cadastrados na API.</Text>}
       {resource.fresh && resource.data && <>
-        <CadastroPicker label="Prestador *" items={resource.data.prestadores} value={prestador} onChange={setPrestador} disabled={pending || uncertain} />
-        <CadastroPicker label="Função *" items={resource.data.funcoes} value={funcao} onChange={setFuncao} disabled={pending || uncertain} />
-        <CadastroPicker label="Setor *" items={resource.data.setores} value={setor} onChange={setSetor} disabled={pending || uncertain} />
-        <SchedulePicker label="Data da jornada *" mode="date" value={data} onChange={setData} disabled={pending || uncertain} />
-        <SchedulePicker label="Chegada prevista *" mode="time" value={chegada} onChange={setChegada} disabled={pending || uncertain} />
-        <SchedulePicker label="Saída prevista *" mode="time" value={saida} onChange={setSaida} disabled={pending || uncertain} />
+        <ResponsiveGrid>
+          <CadastroPicker label="Prestador *" items={resource.data.prestadores} value={prestador} onChange={setPrestador} disabled={pending || uncertain} />
+          <CadastroPicker label="Função *" items={resource.data.funcoes} value={funcao} onChange={setFuncao} disabled={pending || uncertain} />
+          <CadastroPicker label="Setor *" items={resource.data.setores} value={setor} onChange={setSetor} disabled={pending || uncertain} />
+          <SchedulePicker label="Data da jornada *" mode="date" value={data} onChange={setData} disabled={pending || uncertain} />
+          <SchedulePicker label="Chegada prevista *" mode="time" value={chegada} onChange={setChegada} disabled={pending || uncertain} />
+          <SchedulePicker label="Saída prevista *" mode="time" value={saida} onChange={setSaida} disabled={pending || uncertain} />
+        </ResponsiveGrid>
         <View style={ui.card}><Text style={ui.text}>Valor/hora de referência: {funcao ? dinheiro(resource.data.funcoes.find((item) => item.id === funcao)?.valor_hora) : 'Selecione uma função'}</Text>
           <Text style={ui.text}>O valor vigente da função será preservado na jornada. Após criar, aguarde o ADM autorizar a realização antes de registrar entrada.</Text></View>
       </>}
