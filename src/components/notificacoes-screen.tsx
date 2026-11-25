@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/auth';
 import { ativarPush } from '@/services/push';
 import { api } from '@/services/api';
 import { JourneyShell, Button, ui } from '@/components/journey-ui';
+import { identificacaoJornada } from '@/utils/jornadas';
 
 export default function NotificacoesScreen() {
   const { usuario } = useAuth();
@@ -31,7 +32,8 @@ export default function NotificacoesScreen() {
     {itens.map((n) => <View key={n.id} style={ui.card}>
       <Text style={ui.subtitle}>{!n.lida_em ? '● ' : ''}{n.titulo}</Text>
       <Text style={ui.text}>{n.mensagem}</Text>
-      <Text style={ui.text}>Jornada #{n.jornada_id} · {new Date(n.criada_em).toLocaleString('pt-BR')}</Text>
+      <Text style={ui.label}>{identificacaoJornada(n.prestador_nome, n.data_jornada, n.jornada_id)}</Text>
+      <Text style={ui.text}>Recebido em {new Date(n.criada_em).toLocaleString('pt-BR')}</Text>
       <Button secondary label="Ver jornada" disabled={ocupado} onPress={() => void executar(async () => { await ler(n.id); router.push({ pathname: '/jornada', params: { id: n.jornada_id } }); })} />
       {!n.lida_em && <Button secondary label="Marcar como lida" disabled={ocupado} onPress={() => void executar(async () => { await ler(n.id); setMais((prev) => prev.map((a) => a.id === n.id ? { ...a, lida_em: new Date().toISOString() } : a)); })} />}
     </View>)}

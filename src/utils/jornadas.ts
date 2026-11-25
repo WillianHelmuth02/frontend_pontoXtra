@@ -125,6 +125,14 @@ export function formatarData(data: string): string {
   return data.split('-').reverse().join('/');
 }
 
+export function referenciaJornada(data: string | null | undefined, id: string): string {
+  return `${data ? formatarData(data) : 'Data não informada'} · Jornada #${id}`;
+}
+
+export function identificacaoJornada(nome: string | null | undefined, data: string | null | undefined, id: string): string {
+  return `${nome || 'Prestador não identificado'} · ${referenciaJornada(data, id)}`;
+}
+
 export function dataParaApi(value: string): string {
   if (!value.trim()) return '';
   const match = /^(\d{2})\/(\d{2})\/([1-9]\d{3})$/.exec(value.trim());

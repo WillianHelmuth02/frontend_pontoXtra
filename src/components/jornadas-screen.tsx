@@ -10,7 +10,7 @@ import { JornadasFiltros, JornadasOrdem } from '@/components/jornadas-filtros';
 import { api } from '@/services/api';
 import { carregarJornadas, operarLixeira } from '@/services/jornadas';
 import { avisoPontualidade } from '@/utils/jornadas';
-import { FILTROS_VAZIOS, ORDENS_JORNADAS, STATUS_LABELS, exibirJornadas, formatarData, formatarDuracao, nomePrestador, podeRegistrarEntrada, podeEnviarLixeira, type FiltrosJornadas, type Jornada, type OrdemJornadas } from '@/utils/jornadas';
+import { FILTROS_VAZIOS, ORDENS_JORNADAS, STATUS_LABELS, exibirJornadas, formatarDuracao, identificacaoJornada, nomePrestador, podeRegistrarEntrada, podeEnviarLixeira, referenciaJornada, type FiltrosJornadas, type Jornada, type OrdemJornadas } from '@/utils/jornadas';
 
 type Dados = Awaited<ReturnType<typeof carregarJornadas>>;
 const DADOS_VAZIOS: Dados = { jornadas: [], prestadores: [], funcoes: [], setores: [] };
@@ -230,9 +230,10 @@ export function JornadasScreen() {
             const checked = exclusionMode ? exclusionIds.includes(item.id) : item.id === selectedId;
             const selectionDisabled = pending || loading || (exclusionMode && (!podeEnviarLixeira(usuario.perfil, item, usuario.id) || (!checked && exclusionIds.length >= 50)));
             const nome = nomePrestador(item.prestador_id, nomesPrestadores);
+            const identificacao = identificacaoJornada(nome, item.data_jornada, item.id);
             const duracao = item.minutos_trabalhados == null ? '' : formatarDuracao(item.minutos_trabalhados);
             return <View style={[styles.row, checked && styles.rowSelected]}>
-              <Pressable accessibilityRole={exclusionMode ? 'checkbox' : 'radio'} accessibilityState={{ checked, disabled: selectionDisabled }} accessibilityLabel={`${nome}, ${formatarData(item.data_jornada)}, ${STATUS_LABELS[item.status]}${duracao ? `, tempo trabalhado: ${duracao}` : ''}`} disabled={selectionDisabled} onPress={() => {
+              <Pressable accessibilityRole={exclusionMode ? 'checkbox' : 'radio'} accessibilityState={{ checked, disabled: selectionDisabled }} accessibilityLabel={`${identificacao}, ${STATUS_LABELS[item.status]}${duracao ? `, tempo trabalhado: ${duracao}` : ''}`} disabled={selectionDisabled} onPress={() => {
                 if (exclusionMode) setExclusionIds((ids) => checked ? ids.filter((id) => id !== item.id) : [...ids, item.id]);
                 else setSelectedId(checked ? null : item.id);
                 setNotice('');
@@ -240,15 +241,15 @@ export function JornadasScreen() {
               <WorkIcon />
               <View style={styles.rowText}>
                 <Text style={styles.person}>{nome}</Text>
+                <Text style={styles.meta}>{referenciaJornada(item.data_jornada, item.id)}</Text>
                 <Text style={styles.meta}>{nomesFuncoes.get(item.funcao_id) ?? `Função #${item.funcao_id}`} · {nomesSetores.get(item.setor_id) ?? `Setor #${item.setor_id}`}</Text>
-                <Text style={styles.meta}>#{item.id} · {formatarData(item.data_jornada)}</Text>
                 {!!duracao && <Text style={styles.meta}>Tempo trabalhado · {duracao}</Text>}
                 <Text style={styles.rowStatus}>{STATUS_LABELS[item.status]}</Text>
                 {!!item.entrada_em && <Text style={styles.entryLabel}>Entrada registrada</Text>}
               </View>
               <View style={[styles.radio, checked && styles.radioChecked]}>{checked && <Text style={styles.check}>✓</Text>}</View>
               </Pressable>
-              <Pressable accessibilityRole="button" disabled={pending} accessibilityLabel={`Ver detalhes da jornada ${item.id} de ${nome}`} onPress={() => router.push({ pathname: '/jornada', params: { id: item.id } })}><Text style={[styles.filterButton, { textAlign: 'right' }]}>Ver detalhes →</Text></Pressable>
+              <Pressable accessibilityRole="button" disabled={pending} accessibilityLabel={`Ver detalhes de ${identificacao}`} onPress={() => router.push({ pathname: '/jornada', params: { id: item.id } })}><Text style={[styles.filterButton, { textAlign: 'right' }]}>Ver detalhes →</Text></Pressable>
             </View>;
           }}
         />
@@ -277,7 +278,7 @@ export function JornadasScreen() {
       <Modal transparent visible={confirmation} animationType="fade" onRequestClose={() => setConfirmation(false)}>
         <View style={styles.overlay}><View accessibilityViewIsModal style={styles.dialog}>
           <Text accessibilityRole="header" style={styles.dialogTitle}>Registrar entrada?</Text>
-          <Text style={styles.dialogText}>{selected ? nomesPrestadores.get(selected.prestador_id) : ''}</Text>
+          {selected && <Text style={styles.dialogText}>{identificacaoJornada(nomePrestador(selected.prestador_id, nomesPrestadores), selected.data_jornada, selected.id)}</Text>}
           <Text style={styles.dialogText}>O horário atual do servidor será registrado nesta jornada.</Text>
           {confirmation && selected && <AvisoEntrada jornada={selected} />}
           <View style={styles.actions}>

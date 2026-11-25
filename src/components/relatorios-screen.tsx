@@ -7,7 +7,7 @@ import { useApiResource } from '@/hooks/use-api-resource';
 import { api } from '@/services/api';
 import { carregarRelatorio } from '@/services/relatorios';
 import { consultasRelatorio, type FiltrosRelatorio } from '@/utils/relatorios';
-import { FILTROS_VAZIOS, STATUS_LABELS, dinheiro, formatarData, type CadastroResumo, type StatusJornada } from '@/utils/jornadas';
+import { FILTROS_VAZIOS, STATUS_LABELS, dinheiro, formatarData, referenciaJornada, type CadastroResumo, type StatusJornada } from '@/utils/jornadas';
 import { Button, CadastroPicker, JourneyIcon, JourneyShell, ResourceState, ui } from './journey-ui';
 import { SchedulePicker } from './journey-schedule-picker';
 
@@ -215,7 +215,8 @@ function Painel({ adm }: { adm: boolean }) {
       {!dados.lista.itens.length && <Text style={s.muted}>Nenhuma jornada encontrada neste recorte.</Text>}
       {dados.lista.itens.map(item => <View key={item.id} style={s.record}>
         <View style={s.identity}><Text style={s.name}>{item.prestador_nome || 'Prestador #' + item.prestador_id}</Text>
-          <Text style={s.muted}>{formatarData(item.data_jornada)} · {item.setor_nome || 'Setor sem nome'} · #{item.id}</Text></View>
+          <Text style={s.muted}>{referenciaJornada(item.data_jornada, item.id)}</Text>
+          <Text style={s.muted}>{item.setor_nome || 'Setor sem nome'}</Text></View>
         <View style={s.identity}><Text style={s.status}>{STATUS_LABELS[item.status]}</Text>
           <Text style={s.muted}>{item.horas_trabalhadas ? item.horas_trabalhadas + ' líquidas' : 'Horas a calcular'}</Text></View>
         {adm && <View style={s.identity}><Text style={s.name}>{dinheiro(item.valor_calculado ?? null)}</Text>

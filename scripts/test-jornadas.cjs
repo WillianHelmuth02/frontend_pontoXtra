@@ -26,7 +26,8 @@ function load(file, dependencies = {}) {
 
 async function run() {
   const rules = load('src/utils/jornadas.ts');
-  const { FILTROS_VAZIOS, queryJornadas, podeRegistrarEntrada, formatarData } = rules;
+  const { FILTROS_VAZIOS, queryJornadas, podeRegistrarEntrada, formatarData, identificacaoJornada } = rules;
+  assert.equal(identificacaoJornada('Ana Lima', '2026-11-24', '9007199254740993'), 'Ana Lima · 24/11/2026 · Jornada #9007199254740993');
   assert.equal(queryJornadas(FILTROS_VAZIOS), '', 'A consulta inicial inclui todos os status e datas');
   const filters = { ...FILTROS_VAZIOS, prestador_id: '9007199254740993', data_inicio: '29/02/2024', status: 'EM_ANDAMENTO' };
   const params = new URLSearchParams(queryJornadas(filters).slice(1));

@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/auth';
 import { api } from '@/services/api';
 import { ativarPush, observarPush, cancelarRegistroPush } from '@/services/push';
 
-export type Aviso = { id: string; jornada_id: string; titulo: string; mensagem: string; lida_em: string | null; criada_em: string };
+export type Aviso = { id: string; jornada_id: string; prestador_nome?: string | null; data_jornada?: string; titulo: string; mensagem: string; lida_em: string | null; criada_em: string };
 export type ListaAvisos = { itens: Aviso[]; nao_lidas: number; proximo: string | null };
 type Contexto = { lista: ListaAvisos; erro: string; atualizar: () => Promise<void>; ler: (id: string) => Promise<void> };
 const Context = createContext<Contexto | null>(null);

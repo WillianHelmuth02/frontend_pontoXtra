@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/auth';
 import { useApiResource } from '@/hooks/use-api-resource';
 import { api } from '@/services/api';
 import { carregarDetalhes } from '@/services/jornadas';
-import { ACAO_LABELS, STATUS_LABELS, acoesPermitidas, dataParaApi, dinheiro, formatarData, formatarDuracao, horarioFormulario, type AcaoJornada, type AutorJornada, type HistoricoJornada, type Jornada } from '@/utils/jornadas';
+import { ACAO_LABELS, STATUS_LABELS, acoesPermitidas, dataParaApi, dinheiro, formatarData, formatarDuracao, horarioFormulario, identificacaoJornada, type AcaoJornada, type AutorJornada, type HistoricoJornada, type Jornada } from '@/utils/jornadas';
 import { Button, Field, JourneyShell, PERFIS, ResourceState, ui } from './journey-ui';
 import { AvisoEntrada } from './aviso-entrada';
 
@@ -88,6 +88,8 @@ export default function JourneyDetails({ id, criada }: { id: string; criada: boo
   const writing = useRef(false);
   const data = resource.data;
   const j = data?.jornada;
+  const nome = data?.prestadores.find((item) => item.id === j?.prestador_id)?.nome;
+  const identificacao = j ? identificacaoJornada(nome, j.data_jornada, j.id) : 'Jornada';
   const actions = j && usuario && resource.fresh ? acoesPermitidas(usuario.perfil, j, usuario.id) : [];
 
   async function confirm() {
@@ -119,16 +121,14 @@ export default function JourneyDetails({ id, criada }: { id: string; criada: boo
     }
   }
 
-  return <JourneyShell title={`Jornada #${id}`} busy={pending}>
+  return <JourneyShell title={identificacao} busy={pending}>
     {!valid ? <Text style={ui.error}>Identificador de jornada inválido.</Text> : <ResourceState loading={resource.loading} error={resource.error} onRetry={() => void resource.reload()} />}
     {!!notice && <Text accessibilityLiveRegion="polite" style={ui.notice}>{notice}</Text>}
     {!!error && <Text accessibilityRole="alert" style={ui.error}>{error}</Text>}
     {j && data && <>
       <View style={ui.card}>
-        <Text style={ui.subtitle}>{data.prestadores.find((item) => item.id === j.prestador_id)?.nome ?? `Prestador #${j.prestador_id}`}</Text>
         <Text style={ui.text}>Função: {data.funcoes.find((item) => item.id === j.funcao_id)?.nome ?? `#${j.funcao_id}`}</Text>
         <Text style={ui.text}>Setor: {data.setores.find((item) => item.id === j.setor_id)?.nome ?? `#${j.setor_id}`}</Text>
-        <Text style={ui.text}>Data de referência: {formatarData(j.data_jornada)}</Text>
         <Text style={ui.text}>Chegada prevista: {j.chegada_prevista ?? 'Não informada'}</Text>
         {j.entrada_em && <AvisoEntrada jornada={j} />}
         <Text style={ui.text}>Saída prevista: {j.saida_prevista ?? 'Não informada'}</Text>
@@ -172,7 +172,7 @@ export default function JourneyDetails({ id, criada }: { id: string; criada: boo
       <View style={{ flex: 1, padding: 24, backgroundColor: '#001B4266', alignItems: 'center', justifyContent: 'center' }}>
         <View accessibilityViewIsModal style={[ui.card, { width: '100%', maxWidth: 520, backgroundColor: '#FFFFFF' }]}>
           <Text accessibilityRole="header" style={ui.subtitle}>{action ? ACAO_LABELS[action] : ''}?</Text>
-          <Text style={ui.text}>Jornada #{id} · {data?.prestadores.find((item) => item.id === j?.prestador_id)?.nome}</Text>
+          <Text style={ui.text}>{identificacao}</Text>
           {action === 'entrada' && j && <AvisoEntrada jornada={j} />}
           {action === 'cancelar' ? <Text style={ui.text}>O cancelamento preserva a jornada e seu histórico, com status Cancelado. Só é permitido antes de qualquer marcação e libera o prestador para outra jornada. Para removê-la da lista depois, use Excluir selecionadas na consulta de jornadas.</Text>
             : action === 'pagar' ? <Text style={ui.text}>Este registro informa a quitação, sem realizar transferência bancária.</Text>

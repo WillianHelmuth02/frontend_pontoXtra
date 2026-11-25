@@ -3,7 +3,7 @@ import { Modal, Text, View } from 'react-native';
 import { useAuth } from '@/contexts/auth';
 import { useApiResource } from '@/hooks/use-api-resource';
 import { carregarLixeira, detalhesLixeira, operarLixeira } from '@/services/jornadas';
-import { dinheiro, formatarData, horarioFormulario } from '@/utils/jornadas';
+import { dinheiro, horarioFormulario, identificacaoJornada, referenciaJornada } from '@/utils/jornadas';
 import { History, nomeAutor } from './journey-details';
 import { Button, JourneyShell, ResourceState, ui } from './journey-ui';
 
@@ -77,7 +77,7 @@ export default function LixeiraScreen() {
         const nome = data.prestadores.find((p) => p.id === j.prestador_id)?.nome ?? `Prestador #${j.prestador_id}`;
         return <View style={ui.card} key={j.id}>
           <Text style={ui.subtitle}>{nome}</Text>
-          <Text style={ui.text}>#{j.id} · {formatarData(j.data_jornada)} · Cancelado</Text>
+          <Text style={ui.text}>{referenciaJornada(j.data_jornada, j.id)} · Cancelado</Text>
           <Text style={ui.text}>Função: {data.funcoes.find((f) => f.id === j.funcao_id)?.nome ?? `#${j.funcao_id}`}</Text>
           <Text style={ui.text}>Setor: {data.setores.find((s) => s.id === j.setor_id)?.nome ?? `#${j.setor_id}`}</Text>
           <Text style={ui.text}>Valor/hora histórico: {dinheiro(j.valor_hora)}</Text>
@@ -91,7 +91,7 @@ export default function LixeiraScreen() {
     </>}
     {detailLoading && <Text style={ui.text}>Consultando histórico…</Text>}
     {details && resource.fresh && <View style={ui.card}>
-      <Text style={ui.subtitle}>Histórico da jornada #{details.jornada.id}</Text>
+      <Text style={ui.subtitle}>{identificacaoJornada(data?.prestadores.find((p) => p.id === details.jornada.prestador_id)?.nome, details.jornada.data_jornada, details.jornada.id)}</Text>
       <History items={details.historico} />
       <Button secondary label="Fechar histórico" onPress={() => setDetails(null)} />
     </View>}
