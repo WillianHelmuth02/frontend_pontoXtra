@@ -35,6 +35,19 @@ export default function LixeiraScreen() {
     } finally { if (current === detailSequence.current) setDetailLoading(false); }
   }
 
+  function solicitarExclusaoDefinitiva() {
+    if (!canWrite || !usuario) return;
+    setError('');
+    setNotice('');
+    if (usuario.perfil !== 'ADMINISTRADOR' && selectedIds.some((id) =>
+      data?.jornadas.find((jornada) => jornada.id === id)?.criada_por !== usuario.id
+    )) {
+      setError('Somente quem criou a jornada ou um ADM pode excluí-la definitivamente.');
+      return;
+    }
+    setAction('excluir');
+  }
+
   async function confirm() {
     if (!action || !canWrite || writing.current) return;
     writing.current = true; setPending(true); setError(''); setNotice('');
@@ -60,7 +73,7 @@ export default function LixeiraScreen() {
 
   return <JourneyShell title="Lixeira de jornadas" titleIcon="trash" busy={pending}>
     <Text style={ui.text}>Somente jornadas canceladas e sem marcações ficam aqui. Restaurar devolve à consulta como Cancelado. Excluir definitivamente apaga a jornada e todo o seu histórico do banco, sem recuperação pelo aplicativo.</Text>
-    <Text style={ui.text}>{usuario?.perfil === 'RH' ? 'RH pode gerenciar as jornadas da lixeira.' : 'Você pode consultar e gerenciar as jornadas de sua autoria na lixeira.'}</Text>
+    <Text style={ui.text}>Esta lixeira é compartilhada. O criador ou o RH pode restaurar uma jornada. Somente quem criou a jornada ou um ADM pode excluí-la definitivamente.</Text>
     <ResourceState loading={resource.loading} error={resource.error} onRetry={() => void reload()} />
     {!!error && <Text accessibilityRole="alert" style={ui.error}>{error}</Text>}
     {!!notice && <Text accessibilityLiveRegion="polite" style={ui.notice}>{notice}</Text>}
@@ -69,7 +82,7 @@ export default function LixeiraScreen() {
       <Button secondary label="Atualizar lixeira" disabled={pending || detailLoading} onPress={() => void reload()} />
       <View style={ui.row}>
         <Button label="Restaurar selecionadas" secondary disabled={!canWrite} onPress={() => setAction('restaurar')} />
-        <Button label="Excluir definitivamente" danger disabled={!canWrite} onPress={() => setAction('excluir')} />
+        <Button label="Excluir definitivamente" danger disabled={!canWrite} onPress={solicitarExclusaoDefinitiva} />
       </View>
       {!data?.jornadas.length && <Text style={ui.text}>A lixeira está vazia.</Text>}
       {data?.jornadas.map((j) => {
